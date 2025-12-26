@@ -28,50 +28,53 @@ const dir_from_short_code = (short_code) => {
    return level_dir;
 }
 
-const backup_short_codes = (short_codes, starting_index, cb) => {
+const https_get = (remote_filepath, localSavePath) => {
+   return new Promise((resolve, reject) => {
+      const fileStream = fs.createWriteStream(localSavePath);
+      const remoteGzUrl = `${network["fracto-prod"]}/${remote_filepath}`
+      https.get(remoteGzUrl, (response) => {
+         response.pipe(fileStream);
+         fileStream.on('finish', () => {
+            fileStream.close();
+            resolve()
+         });
+         fileStream.on('error', (err) => {
+            console.error('Error writing to file:', err);
+            resolve()
+         });
+      }).on('error', (err) => {
+         console.error('Error downloading file:', err);
+         resolve()
+      });
+   })
+}
+
+const backup_short_codes = async (short_codes, starting_index, cb) => {
    let index = starting_index
    let remote_filepath
    let localSavePath
+   let count = 0
    while (index < short_codes.length) {
       const short_code = short_codes.at(index++)
       const level = short_code.length
       const remaining = short_codes.length - index
       if (remaining % 100 === 0) {
-         console.log(`[${level}] ${remaining} remain`)
+         console.log(`[${level}] ${remaining} remain (${count})`)
+         count = 0
       }
 
       const naught = level < 10 ? '0' : ''
       const level_dirname = `L${naught}${level}`
       const coded_dir = dir_from_short_code(short_code)
 
-      remote_filepath = `${level_dirname}/${short_code}.gz`
       localSavePath = `${coded_dir}${SEPARATOR}${short_code}.gz`
       if (!fs.existsSync(localSavePath)) {
-         break
+         count++
+         remote_filepath = `${level_dirname}/${short_code}.gz`
+         await https_get(remote_filepath, localSavePath)
       }
    }
-   if (index >= short_codes.length) {
-      console.log('complete')
-      cb()
-      return;
-   }
-
-   const fileStream = fs.createWriteStream(localSavePath);
-   const remoteGzUrl = `${network["fracto-prod"]}/${remote_filepath}`
-   https.get(remoteGzUrl, (response) => {
-      response.pipe(fileStream);
-      fileStream.on('finish', () => {
-         fileStream.close();
-         backup_short_codes(short_codes, index, cb)
-      });
-      fileStream.on('error', (err) => {
-         console.error('Error writing to file:', err);
-         backup_short_codes(short_codes, index, cb)
-      });
-   }).on('error', (err) => {
-      console.error('Error downloading file:', err);
-      backup_short_codes(short_codes, index, cb)
-   });
+   cb()
 }
 
 const backup_level_short_codes = (level_short_codes, cb) => {
