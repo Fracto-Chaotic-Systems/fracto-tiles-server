@@ -16,12 +16,11 @@ app.use((req, res, next) => {
    next();
 });
 
-initialize_coverage(() => {
-   // Start the server and listen for incoming requests
-   app.listen(FRACTO_TILES_PORT, () => {
-      console.log(chalk.green(`fracto-tiles-server is running on http://localhost:${FRACTO_TILES_PORT}`));
-   });
-})
+// Start the server and listen for incoming requests
+app.listen(FRACTO_TILES_PORT, () => {
+   console.log(chalk.green(`fracto-tiles-server is running on http://localhost:${FRACTO_TILES_PORT}`));
+   initialize_coverage()
+});
 
 
 app.get('/', handle_main_status)
