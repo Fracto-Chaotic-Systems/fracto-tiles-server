@@ -13,7 +13,6 @@ export const handle_get_canvas_buffer = async (req, res) => {
    const aspect_ratio = parseFloat(req.query.aspect_ratio)
    const resolution_factor = parseFloat(req.query.resolution_factor)
    const canvas_buffer = init_canvas_buffer(width_px, aspect_ratio);
-   // console.log('handle_get_canvas_buffer 1')
    await fill_canvas_buffer(
       canvas_buffer,
       width_px,
@@ -22,6 +21,5 @@ export const handle_get_canvas_buffer = async (req, res) => {
       aspect_ratio,
       resolution_factor,
    )
-   // console.log('handle_get_canvas_buffer 2')
    res.json({canvas_buffer})
 }
