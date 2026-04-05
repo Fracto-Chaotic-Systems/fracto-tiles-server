@@ -21,11 +21,12 @@ export const fill_hyper_canvas_buffer = async (
    }
    for (let canvas_x = 0; canvas_x < width_px; canvas_x++) {
       const x = horz_scale[canvas_x]
-      console.log('x', x)
+      // console.log('x', x)
       for (let canvas_y = 0; canvas_y < height_px; canvas_y++) {
          const y = vert_scale[canvas_y]
          const {pattern, iteration} = FractoHyperCalc.calc(x, y)
          canvas_buffer[canvas_x][canvas_y] = [pattern, iteration]
+         console.log(`${x} ${y} ${pattern} ${iteration}`)
       }
    }
 }
