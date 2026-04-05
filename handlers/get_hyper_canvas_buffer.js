@@ -8,7 +8,7 @@ export const fill_hyper_canvas_buffer = async (
    width_px,
    focal_point,
    scope,
-   aspect_ratio)=>{
+   aspect_ratio) => {
    const canvas_increment = scope / width_px
    const height_px = width_px * aspect_ratio
    const horz_scale = new Array(width_px)
@@ -21,6 +21,7 @@ export const fill_hyper_canvas_buffer = async (
    }
    for (let canvas_x = 0; canvas_x < width_px; canvas_x++) {
       const x = horz_scale[canvas_x]
+      console.log('x', x)
       for (let canvas_y = 0; canvas_y < height_px; canvas_y++) {
          const y = vert_scale[canvas_y]
          const {pattern, iteration} = FractoHyperCalc.calc(x, y)
