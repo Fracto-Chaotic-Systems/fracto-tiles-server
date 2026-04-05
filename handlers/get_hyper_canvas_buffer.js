@@ -26,7 +26,7 @@ export const fill_hyper_canvas_buffer = async (
          const y = vert_scale[canvas_y]
          const {pattern, iteration} = FractoHyperCalc.calc(x, y)
          canvas_buffer[canvas_x][canvas_y] = [pattern, iteration]
-         console.log(`${x} ${y} ${pattern} ${iteration}`)
+         // console.log(`${x} ${y} ${pattern} ${iteration}`)
       }
    }
 }
