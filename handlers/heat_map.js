@@ -1,4 +1,5 @@
 import {init_canvas_buffer, tiles_in_scope} from "../../../sdk/FractoTileData.js";
+import {detect_coverage} from "../../../sdk/FractoCoverageUtils.js";
 
 const MAX_LEVELS = 35
 
@@ -55,8 +56,9 @@ export const handle_heat_map_buffer = async (req, res) => {
    const heat_map_buffer = fill_heat_map_buffer(all_level_tiles, focal_point, scope, width_px, aspect_ratio);
    const end = performance.now()
    console.log(`heat_map_buffer (width=${req.query.width_px}) took ${end - start}ms`)
-   const coverage = all_level_tiles.map((level_tiles) => {
-      return level_tiles.map((tile) => tile.short_code)
-   })
+   // const coverage = all_level_tiles.map((level_tiles) => {
+   //    return level_tiles.map((tile) => tile.short_code)
+   // })
+   const coverage = detect_coverage(focal_point, scope)
    res.json({heat_map_buffer, coverage})
 }
