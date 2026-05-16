@@ -11,8 +11,11 @@ export const traverseAndQuery = (dir, filter = /.*/) => {
 
    const native_path = dir.replace(`..${SEPARATOR}..${SEPARATOR}..${SEPARATOR}tiles${SEPARATOR}`, '')
    const relative_path = native_path.replaceAll(SEPARATOR, '/')
+   const key_path = native_path
+      .replaceAll(`${TILES_DIR}/`, '')
+      .replaceAll(`\\`, '/')
 
-   manifest[relative_path] = []
+   manifest[key_path] = []
    path_count++
 
    if (path_count % 1000 === 0) {
@@ -26,7 +29,7 @@ export const traverseAndQuery = (dir, filter = /.*/) => {
          traverseAndQuery(fullPath, filter);
       } else if (entry.isFile() && filter.test(entry.name)) {
          const short_code = entry.name.replace('.gz', '')
-         manifest[relative_path].push(short_code)
+         manifest[key_path].push(short_code)
       }
    }
    return manifest
