@@ -18,10 +18,6 @@ export const traverseAndQuery = (dir, filter = /.*/) => {
    manifest[key_path] = []
    path_count++
 
-   if (path_count % 1000 === 0) {
-      console.log(`${path_count} bins`)
-   }
-
    const entries = fs.readdirSync(dir, {withFileTypes: true});
    for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);

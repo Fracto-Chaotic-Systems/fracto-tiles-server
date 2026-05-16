@@ -15,18 +15,12 @@ for (let digit_1 = 0; digit_1 < 4; digit_1++) {
             const subdir = `${digit_1}${digit_2}${digit_3}${digit_4}`
             const path_dir = `${TILES_DIR}/${subdir}`
             if (!fs.existsSync(path_dir)) {
-               console.log(`${path_dir} does not exist`)
+               // console.log(`${path_dir} does not exist`)
                continue
             }
             const manifest = traverseAndQuery(path_dir, /\.gz$/);
-            fs.writeFile(`${MANIFEST_DIR}/${subdir}.json`, JSON.stringify(manifest), 'utf8', (err) => {
-               if (err) {
-                  console.error("An error occurred while writing JSON Object to File.", err);
-                  return;
-               }
-               console.log(`${subdir}`);
-            });
-
+            fs.writeFileSync(`${MANIFEST_DIR}/${subdir}.json`, JSON.stringify(manifest), 'utf8')
+            console.log(`${subdir}`);
          }
       }
    }
