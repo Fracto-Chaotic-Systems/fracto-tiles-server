@@ -13,7 +13,7 @@ import {handle_tile_coverage} from "./handlers/tile_coverage.js";
 import {handle_heat_map_buffer} from "./handlers/heat_map.js";
 import {handle_get_hyper_canvas_buffer} from "./handlers/get_hyper_canvas_buffer.js";
 import FractoTileCache from "../../sdk/FractoTileCache.js";
-import {handle_manifest} from "./handlers/tile_manifest.js";
+import {handle_manifest} from "./handlers/handle_manifest.js";
 
 const app = express();
 
