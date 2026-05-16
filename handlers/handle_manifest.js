@@ -5,15 +5,16 @@ const SEPARATOR = path.sep;
 const TILES_DIR = '../../../tiles'
 
 let path_count = 0
-const manifest = {}
+let manifest = {}
 
-export const traverseAndQuery = (dir, filter = /.*/) => {
-
+export const traverseAndQuery = (dir, filter = /.*/, is_root = false) => {
+   if (is_root) {
+      manifest = {}
+   }
    const native_path = dir.replace(`..${SEPARATOR}..${SEPARATOR}..${SEPARATOR}tiles${SEPARATOR}`, '')
    const relative_path = native_path.replaceAll(SEPARATOR, '/')
-   const key_path = native_path
+   const key_path = relative_path
       .replaceAll(`${TILES_DIR}/`, '')
-      .replaceAll(`\\`, '/')
 
    manifest[key_path] = []
    path_count++

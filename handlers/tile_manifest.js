@@ -18,7 +18,7 @@ for (let digit_1 = 0; digit_1 < 4; digit_1++) {
                // console.log(`${path_dir} does not exist`)
                continue
             }
-            const manifest = traverseAndQuery(path_dir, /\.gz$/);
+            const manifest = traverseAndQuery(path_dir, /\.gz$/, true);
             fs.writeFileSync(`${MANIFEST_DIR}/${subdir}.json`, JSON.stringify(manifest), 'utf8')
             console.log(`${subdir}`);
          }
