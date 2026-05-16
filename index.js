@@ -13,6 +13,7 @@ import {handle_tile_coverage} from "./handlers/tile_coverage.js";
 import {handle_heat_map_buffer} from "./handlers/heat_map.js";
 import {handle_get_hyper_canvas_buffer} from "./handlers/get_hyper_canvas_buffer.js";
 import FractoTileCache from "../../sdk/FractoTileCache.js";
+import {handle_manifest} from "./handlers/tile_manifest.js";
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.get("/tile_coverage", handle_tile_coverage)
 app.get("/canvas_buffer", handle_get_canvas_buffer)
 app.get("/hyper_canvas_buffer", handle_get_hyper_canvas_buffer)
 app.get("/heat_map_buffer", handle_heat_map_buffer)
+app.get("/manifest", handle_manifest)
 
 setInterval(() => {
    FractoTileCache.trim_cache()
