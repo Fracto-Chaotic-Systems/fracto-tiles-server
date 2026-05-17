@@ -1,6 +1,5 @@
 import fs from 'fs'
 import path from 'path'
-import {qr} from "mathjs";
 
 const TILES_DIR = '../../../tiles'
 
@@ -31,8 +30,7 @@ const processJsonFiles = async (directoryPath) => {
       }
       console.log(totals);
       console.log('grand total', grand_total);
-      console.log('path count', path_count
-      qr);
+      console.log('path count', path_count);
    } catch (error) {
       console.error('Error processing folder:', error);
    }
