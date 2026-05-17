@@ -11,7 +11,10 @@ const processJsonFiles = async (directoryPath) => {
          const filePath = path.join(directoryPath, file);
          const fileData = fs.readFileSync(filePath, 'utf-8');
          const jsonData = JSON.parse(fileData);
-         console.log(`Processing ${file}:`, Object.keys(jsonData).length);
+         const tile_paths = Object.keys(jsonData)
+         for (const tile_path of tile_paths) {
+            console.log(`tile_path: ${tile_path}`);
+         }
       }
    } catch (error) {
       console.error('Error processing folder:', error);

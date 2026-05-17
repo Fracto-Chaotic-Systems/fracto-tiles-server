@@ -40,7 +40,7 @@ export const traverseAndQuery = (dir, filter = /.*/, is_root = false) => {
 
    if (is_root) {
       if (file_count) {
-         console.log(`total`, file_count)
+         console.log(`total for ${key_path}`, file_count)
       }
    }
    return manifest
