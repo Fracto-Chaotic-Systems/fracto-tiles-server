@@ -47,7 +47,7 @@ export const traverseAndQuery = (dir, filter = /.*/, is_root = false) => {
 };
 
 export const handle_manifest = async (req, res) => {
-   const manifest = traverseAndQuery(TILES_DIR, /\.gz$/);
+   const manifest = traverseAndQuery(TILES_DIR, /\.gz$/, true);
    fs.writeFile(`${TILES_DIR}/manifest.json`, JSON.stringify(manifest), 'utf8', (err) => {
       if (err) {
          console.error("An error occurred while writing JSON Object to File.", err);
