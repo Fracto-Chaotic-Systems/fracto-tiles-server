@@ -29,12 +29,12 @@ FractoIndexedTiles.init_tile_sets()
 get_manifest((file) => {
    console.log(file.manifest_file);
 }, () => {
-   initialize_coverage(() => {
+   // initialize_coverage(() => {
       // Start the server and listen for incoming requests
       app.listen(FRACTO_TILES_PORT, () => {
          console.log(chalk.green(`fracto-tiles-server is running on http://localhost:${FRACTO_TILES_PORT}`));
       });
-   })
+   // })
 })
 
 app.get('/', handle_main_status)

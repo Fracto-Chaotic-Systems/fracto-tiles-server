@@ -3,29 +3,13 @@ import https from "https";
 import network from "../../../config/network.json" with {type: "json"};
 import FractoIndexedTiles from "../../../sdk/FractoIndexedTiles.js";
 import path from "path";
+import {dir_from_short_code} from "../tiles_utils.js";
 
 const SEPARATOR = path.sep;
 
 const TILES_DIR = `..${SEPARATOR}..${SEPARATOR}..${SEPARATOR}tiles`;
 if (!fs.existsSync(TILES_DIR)) {
    fs.mkdirSync(TILES_DIR)
-}
-
-const dir_from_short_code = (short_code) => {
-   const pieces = short_code.match(/.{1,4}/g);
-   const last_piece = pieces[pieces.length - 1];
-   if (last_piece.length < 4) {
-      pieces.pop()
-   }
-   const joined_pieces = pieces.join(SEPARATOR)
-   const level_dir = joined_pieces.length
-      ? `${TILES_DIR}${SEPARATOR}${joined_pieces}`
-      : TILES_DIR
-   if (!fs.existsSync(level_dir)) {
-      fs.mkdirSync(level_dir, {recursive: true})
-   }
-   // console.log(`${short_code}: ${level_dir}`)
-   return level_dir;
 }
 
 const https_get = (remote_filepath, localSavePath) => {
