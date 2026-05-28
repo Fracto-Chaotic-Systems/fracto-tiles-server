@@ -16,6 +16,17 @@ const fetch_level_codes = async (level) => {
    }
 }
 
+const fetch_tile = async (short_code) => {
+   const url = `http://localhost:${FRACTO_DATA_PORT}/tile?short_code=${short_code}`
+   try {
+      const response = await fetch(url)
+      return await response.json()
+   } catch (e) {
+      // console.log(e.message)
+      return null
+   }
+}
+
 const add_tile = async (short_code) => {
    const url = `http://localhost:${FRACTO_DATA_PORT}/tile`
    const parent = short_code.slice(0, -1)
@@ -64,18 +75,26 @@ collect_category_tiles('indexed', async all_tiles => {
       if (level < 16) {
          continue
       }
-      const db_short_codes = await fetch_level_codes(level)
+      // const db_short_codes = await fetch_level_codes(level)
       let counter = 0
+      let existing_counter = 0
       for (const level_tile of level_tiles) {
-         if (db_short_codes.result.includes(level_tile)) {
-            continue
+         const existing = await fetch_tile(level_tile)
+         // console.log(existing)
+         if (!existing || !existing.result.length) {
+            await add_tile(level_tile)
+            counter++
+            if (counter % 1000 === 0) {
+               console.log(`added ${counter}`)
+            }
+         } else {
+            existing_counter++
+            if (existing_counter % 1000 === 0) {
+               console.log(`existing ${existing_counter}`)
+            }
          }
-         await add_tile(level_tile)
-         counter++
-         if (counter % 1000 === 0) {
-            console.log(`added ${counter}`)
-         }
+
       }
-      console.log(`level ${level} added ${counter}`)
+      console.log(`level ${level} added ${counter} existing ${existing_counter}`)
    }
 })
