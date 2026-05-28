@@ -61,6 +61,9 @@ collect_category_tiles('indexed', async all_tiles => {
          continue
       }
       const level = first.length
+      if (level < 16) {
+         continue
+      }
       const db_short_codes = await fetch_level_codes(level)
       let counter = 0
       for (const level_tile of level_tiles) {
