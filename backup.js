@@ -1,9 +1,9 @@
 import fs from "fs";
 import https from "https";
-import network from "../../../config/network.json" with {type: "json"};
-import FractoIndexedTiles from "../../../sdk/FractoIndexedTiles.js";
+import network from "../../config/network.json" with {type: "json"};
+import FractoIndexedTiles from "../../sdk/FractoIndexedTiles.js";
 import path from "path";
-import {dir_from_short_code} from "../tiles_utils.js";
+import {dir_from_short_code} from "./tiles_utils.js";
 
 const SEPARATOR = path.sep;
 
