@@ -26,15 +26,27 @@ app.use((req, res, next) => {
 
 FractoIndexedTiles.init_tile_sets()
 
+let latest_level = 0
 get_manifest((file) => {
-   console.log(file.manifest_file);
+   const level_str = file.manifest_file
+      .slice(30)
+      .replace('.json', '')
+   const underscore_pos = level_str.indexOf('_')
+   const level = underscore_pos > 0
+      ? level_str.slice(0, underscore_pos)
+      : level_str
+   if (level !== latest_level) {
+      console.log('indexed level', level)
+      latest_level = level
+   }
 }, () => {
-   // initialize_coverage(() => {
-      // Start the server and listen for incoming requests
-      app.listen(FRACTO_TILES_PORT, () => {
-         console.log(chalk.green(`fracto-tiles-server is running on http://localhost:${FRACTO_TILES_PORT}`));
-      });
-   // })
+   // Start the server and listen for incoming requests
+   app.listen(FRACTO_TILES_PORT, () => {
+      console.log(chalk.green(`fracto-tiles-server is running on http://localhost:${FRACTO_TILES_PORT}`));
+      initialize_coverage(() => {
+         console.log(chalk.blue(`coverage is initialized, tile generation may commense`))
+      })
+   });
 })
 
 app.get('/', handle_main_status)
