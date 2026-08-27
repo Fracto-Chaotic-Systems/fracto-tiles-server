@@ -133,6 +133,7 @@ FractoIndexedTiles.load_short_codes("indexed", result => {
       }
       if (packet_columns.length) {
          write_packet_file(level, packet_columns, packet_index ? packet_index : -1)
+         packet_manifest.tile_count += tile_count
       }
    }
    const manifest_path = `${tile_bin_dir}/packet_manifest.json`
