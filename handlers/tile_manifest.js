@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import {traverseAndQuery} from "./handle_manifest.js";
+import {TILE_DATA_DIRECTORY} from '../../../sdk/FractoTilePaths.js'
 
-const TILES_DIR = '../../../tiles'
+const TILES_DIR = TILE_DATA_DIRECTORY
 const MANIFEST_DIR = `${TILES_DIR}/manifest`;
 
 if (!fs.existsSync(MANIFEST_DIR)) {

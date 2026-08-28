@@ -4,10 +4,11 @@ import network from "../../config/network.json" with {type: "json"};
 import FractoIndexedTiles from "../../sdk/FractoIndexedTiles.js";
 import path from "path";
 import {dir_from_short_code} from "./tiles_utils.js";
+import {TILE_DATA_DIRECTORY} from '../../sdk/FractoTilePaths.js'
 
 const SEPARATOR = path.sep;
 
-const TILES_DIR = `..${SEPARATOR}..${SEPARATOR}..${SEPARATOR}tiles`;
+const TILES_DIR = TILE_DATA_DIRECTORY;
 if (!fs.existsSync(TILES_DIR)) {
    fs.mkdirSync(TILES_DIR)
 }

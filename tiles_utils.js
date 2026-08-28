@@ -1,8 +1,9 @@
 import path from "path";
 import fs from "fs";
+import {TILE_DATA_DIRECTORY} from '../../sdk/FractoTilePaths.js'
 
 const SEPARATOR = path.sep;
-const TILES_DIR = `..${SEPARATOR}..${SEPARATOR}tiles`;
+const TILES_DIR = TILE_DATA_DIRECTORY;
 
 export const dir_from_short_code = (short_code) => {
    const pieces = short_code.match(/.{1,4}/g);

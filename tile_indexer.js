@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 
 import FractoIndexedTiles from "../../sdk/FractoIndexedTiles.js";
 
@@ -7,15 +8,18 @@ let bin_verb = process.argv[2]
 if (!bin_verb) {
    bin_verb = BIN_VERB_INDEXED
 }
-const tiles_dir = '../../tiles/manifest'
+const generation_dir = process.env.FRACTO_TILE_INDEX_GENERATION_DIR
+const tiles_dir = generation_dir
+   ? path.join(generation_dir, 'manifest')
+   : '../../tiles/manifest'
 if (!fs.existsSync(tiles_dir)) {
    console.log("adding tiles_dir", tiles_dir)
-   fs.mkdirSync(tiles_dir);
+   fs.mkdirSync(tiles_dir, {recursive: true});
 }
 const tile_bin_dir = `${tiles_dir}/${bin_verb}`
 if (!fs.existsSync(tile_bin_dir)) {
    console.log("adding tile_bin_dir", tile_bin_dir)
-   fs.mkdirSync(tile_bin_dir);
+   fs.mkdirSync(tile_bin_dir, {recursive: true});
 }
 
 const bounds_from_short_code = (short_code) => {

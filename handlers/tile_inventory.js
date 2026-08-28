@@ -1,7 +1,8 @@
 import fs from 'fs'
 import path from 'path'
+import {tile_index_paths} from '../../../sdk/FractoTilePaths.js'
 
-const TILES_DIR = '../../../tiles'
+const INDEX_SOURCE_DIR = tile_index_paths().source
 
 const inventory_path = (tile_path, short_codes) => {
    console.log(`tile_path ${tile_path}`, short_codes.length)
@@ -36,4 +37,4 @@ const processJsonFiles = async (directoryPath) => {
    }
 }
 
-processJsonFiles(`${TILES_DIR}/manifest`);
+processJsonFiles(INDEX_SOURCE_DIR);

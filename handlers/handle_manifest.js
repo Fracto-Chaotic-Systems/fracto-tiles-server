@@ -1,18 +1,18 @@
 import path from 'path';
 import fs from "fs";
 import chalk from "chalk";
+import {TILE_DATA_DIRECTORY} from '../../../sdk/FractoTilePaths.js'
 
 const SEPARATOR = path.sep;
-const TILES_DIR = '../../../tiles'
+const TILES_DIR = TILE_DATA_DIRECTORY
 
 let file_count = 0
 let manifest = {}
 
 export const traverseAndQuery = (dir, filter = /.*/, is_root = false) => {
-   const native_path = dir.replace(`..${SEPARATOR}..${SEPARATOR}..${SEPARATOR}tiles${SEPARATOR}`, '')
+   const native_path = path.relative(TILES_DIR, dir)
    const relative_path = native_path.replaceAll(SEPARATOR, '/')
    const key_path = relative_path
-      .replaceAll(`${TILES_DIR}/`, '')
 
    if (is_root) {
       manifest = {}
