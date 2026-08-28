@@ -15,21 +15,37 @@ if (!fs.existsSync(TILES_DIR)) {
 
 const https_get = (remote_filepath, localSavePath) => {
    return new Promise((resolve, reject) => {
-      const fileStream = fs.createWriteStream(localSavePath);
+      const temporaryPath = `${localSavePath}.tmp-backup-${process.pid}-${Date.now()}`
+      const cleanup = () => fs.rmSync(temporaryPath, {force: true})
+      const fail = error => {
+         cleanup()
+         console.error(`Unable to back up ${remote_filepath}:`, error.message)
+         resolve()
+      }
+      const fileStream = fs.createWriteStream(temporaryPath, {flags: 'wx'});
       const remoteGzUrl = `${network["fracto-prod"]}/${remote_filepath}`
       https.get(remoteGzUrl, (response) => {
+         if (response.statusCode !== 200) {
+            response.resume()
+            fail(new Error(`HTTP ${response.statusCode}`))
+            return
+         }
          response.pipe(fileStream);
          fileStream.on('finish', () => {
             fileStream.close();
-            resolve()
+            try {
+               fs.renameSync(temporaryPath, localSavePath)
+               resolve()
+            } catch (error) {
+               fail(error)
+            }
          });
          fileStream.on('error', (err) => {
-            console.error('Error writing to file:', err);
-            resolve()
+            fail(err)
          });
+         response.on('error', fail)
       }).on('error', (err) => {
-         console.error('Error downloading file:', err);
-         resolve()
+         fail(err)
       });
    })
 }
