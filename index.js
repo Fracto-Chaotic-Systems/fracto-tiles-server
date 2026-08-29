@@ -13,6 +13,7 @@ import {handle_get_hyper_canvas_buffer} from './handlers/get_hyper_canvas_buffer
 import FractoTileCache from '../../sdk/FractoTileCache.js'
 import {load_tile_index_cache} from '../../sdk/FractoTileIndexCache.js'
 import {handle_manifest} from './handlers/handle_manifest.js'
+import {handle_cache_status} from './handlers/cache_status.js'
 
 let latest_level = null
 console.log('Loading compiled tile index cache...')
@@ -47,6 +48,7 @@ app.get('/canvas_buffer', handle_get_canvas_buffer)
 app.get('/hyper_canvas_buffer', handle_get_hyper_canvas_buffer)
 app.get('/heat_map_buffer', handle_heat_map_buffer)
 app.get('/manifest', handle_manifest)
+app.get('/cache_status', handle_cache_status)
 
 setInterval(() => {
    FractoTileCache.trim_cache()
