@@ -14,6 +14,7 @@ import FractoTileCache from '../../sdk/FractoTileCache.js'
 import {load_tile_index_cache} from '../../sdk/FractoTileIndexCache.js'
 import {handle_manifest} from './handlers/handle_manifest.js'
 import {handle_cache_status} from './handlers/cache_status.js'
+import {handle_metrics, record_request} from './handlers/metrics.js'
 
 let latest_level = null
 console.log('Loading compiled tile index cache...')
@@ -27,6 +28,8 @@ console.log(`Loaded ${cache_metadata.packet_count} cached packets for ${cache_me
 
 const app = express()
 app.use((req, res, next) => {
+   const started = Date.now()
+   res.once('finish', () => record_request(res, Date.now() - started))
    res.setHeader('Access-Control-Allow-Origin', '*')
    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With')
@@ -49,6 +52,7 @@ app.get('/hyper_canvas_buffer', handle_get_hyper_canvas_buffer)
 app.get('/heat_map_buffer', handle_heat_map_buffer)
 app.get('/manifest', handle_manifest)
 app.get('/cache_status', handle_cache_status)
+app.get('/metrics', handle_metrics)
 
 setInterval(() => {
    FractoTileCache.trim_cache()
