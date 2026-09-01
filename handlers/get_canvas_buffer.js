@@ -13,7 +13,7 @@ export const handle_get_canvas_buffer = async (req, res) => {
       }
       const aspect_ratio = parseFloat(req.query.aspect_ratio)
       const resolution_factor = parseFloat(req.query.resolution_factor)
-      const strategy = req.query.strategy || process.env.FRACTO_RASTER_STRATEGY || 'masked'
+      const strategy = req.query.strategy || process.env.FRACTO_RASTER_STRATEGY || 'turbo'
       const canvas_buffer = init_canvas_buffer(width_px, aspect_ratio);
       await fill_canvas_buffer(
          canvas_buffer,

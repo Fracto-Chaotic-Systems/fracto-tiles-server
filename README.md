@@ -92,7 +92,14 @@ Returns coverage and generation categories around a focal point. Query parameter
 
 ### `GET /canvas_buffer`
 
-Builds a raster buffer from indexed tile data. Query parameters are `width_px`, `focal_point_x`, `focal_point_y`, `scope`, `aspect_ratio`, and `resolution_factor`. The masked unresolved-pixel renderer is the default; select the stable legacy renderer with `strategy=legacy` or `FRACTO_RASTER_STRATEGY=legacy`. Returns `{ "canvas_buffer": ... }` or `{ "error": ... }`.
+Builds a raster buffer from indexed tile data. Query parameters are `width_px`, `focal_point_x`, `focal_point_y`, `scope`, `aspect_ratio`, and `resolution_factor`. The turbo unresolved-pixel renderer is the default; select the stable legacy renderer with `strategy=legacy` or `FRACTO_RASTER_STRATEGY=legacy`. Returns `{ "canvas_buffer": ... }` or `{ "error": ... }`.
+
+### Benchmark reports
+
+The root benchmark command writes dated JSON reports to the runtime-only
+`benchmarks/legacy/` and `benchmarks/turbo/` directories. These directories are
+ignored by Git and may be retained with the tile-server installation for later
+analysis.
 
 ### `GET /hyper_canvas_buffer`
 

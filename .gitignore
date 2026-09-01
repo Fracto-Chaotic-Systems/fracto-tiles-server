@@ -140,3 +140,6 @@ vite.config.ts.timestamp-*
 
 # Local tile export
 tiles.csv
+
+# Benchmark reports
+benchmarks/
