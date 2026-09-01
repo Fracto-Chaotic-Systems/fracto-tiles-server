@@ -15,6 +15,7 @@ import {load_tile_index_cache} from '../../sdk/FractoTileIndexCache.js'
 import {handle_manifest} from './handlers/handle_manifest.js'
 import {handle_cache_status} from './handlers/cache_status.js'
 import {handle_metrics, record_request} from './handlers/metrics.js'
+import {handle_benchmark_results} from './handlers/benchmark_results.js'
 
 let latest_level = null
 console.log('Loading compiled tile index cache...')
@@ -53,6 +54,7 @@ app.get('/heat_map_buffer', handle_heat_map_buffer)
 app.get('/manifest', handle_manifest)
 app.get('/cache_status', handle_cache_status)
 app.get('/metrics', handle_metrics)
+app.get('/benchmark_results', handle_benchmark_results)
 
 setInterval(() => {
    FractoTileCache.trim_cache()

@@ -101,6 +101,9 @@ The root benchmark command writes dated JSON reports to the runtime-only
 ignored by Git and may be retained with the tile-server installation for later
 analysis.
 
+`GET /benchmark_results` returns the newest report envelope for each strategy,
+or `null` when that strategy has no stored report.
+
 ### `GET /hyper_canvas_buffer`
 
 Calculates a hyper-complex raster directly. Query parameters are `width_px`, `focal_point_x`, `focal_point_y`, `scope`, and `aspect_ratio`. Returns `{ "canvas_buffer": ... }`. This endpoint can be computationally expensive.
