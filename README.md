@@ -92,7 +92,7 @@ Returns coverage and generation categories around a focal point. Query parameter
 
 ### `GET /canvas_buffer`
 
-Builds a raster buffer from indexed tile data. Query parameters are `width_px`, `focal_point_x`, `focal_point_y`, `scope`, `aspect_ratio`, and `resolution_factor`. Returns `{ "canvas_buffer": ... }` or `{ "error": ... }`.
+Builds a raster buffer from indexed tile data. Query parameters are `width_px`, `focal_point_x`, `focal_point_y`, `scope`, `aspect_ratio`, and `resolution_factor`. An optional `strategy=masked` selects the experimental unresolved-pixel renderer; the default `legacy` strategy preserves the established behavior. Returns `{ "canvas_buffer": ... }` or `{ "error": ... }`.
 
 ### `GET /hyper_canvas_buffer`
 
