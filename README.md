@@ -173,6 +173,22 @@ Stop the launcher with Ctrl+C when finished.
 
 ## Logs and troubleshooting
 
+### Raster worker pool
+
+The `canvas_buffer` and `hyper_canvas_buffer` endpoints run in a bounded
+worker-thread pool so CPU-heavy rendering does not monopolize the HTTP event
+loop. The pool defaults to two workers; set `FRACTO_TILE_WORKER_COUNT` to a
+value from 1 through 8 to tune it for the available Docker CPU and memory.
+Set `FRACTO_TILE_WORKER_HEAP_MB` to impose a per-worker V8 old-generation heap
+limit when a worker count increase needs explicit memory control. Leave it
+unset to use Node's normal worker heap limit. The total container memory limit
+must still be large enough for the main process plus every worker's index,
+cache, and request buffers; these settings cannot grant memory beyond Docker's
+limit.
+Each worker loads its own tile index and in-memory tile cache, while the
+filesystem tile cache remains shared. Worker labels are emitted with distinct
+ANSI colors in the logs.
+
 When started by the root supervisor, output is appended to `logs/fracto-tiles-server-log-YYYY-MM-DD.txt` in the root repository.
 
 Common failures:

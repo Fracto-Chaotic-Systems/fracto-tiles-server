@@ -1,7 +1,4 @@
-import {
-   fill_canvas_buffer,
-   init_canvas_buffer
-} from "../../../sdk/FractoTileData.js";
+import {raster_worker_pool} from '../raster_worker_pool.js'
 
 export const handle_get_canvas_buffer = async (req, res) => {
    try {
@@ -14,18 +11,10 @@ export const handle_get_canvas_buffer = async (req, res) => {
       const aspect_ratio = parseFloat(req.query.aspect_ratio)
       const resolution_factor = parseFloat(req.query.resolution_factor)
       const strategy = req.query.strategy || process.env.FRACTO_RASTER_STRATEGY || 'turbo'
-      const canvas_buffer = init_canvas_buffer(width_px, aspect_ratio);
-      await fill_canvas_buffer(
-         canvas_buffer,
-         width_px,
-         focal_point,
-         scope,
-         aspect_ratio,
-         resolution_factor,
-         null,
-         null,
-         strategy,
-      )
+      const canvas_buffer = await raster_worker_pool.run({
+         type: 'canvas_buffer', width_px, focal_point, scope, aspect_ratio,
+         resolution_factor, strategy,
+      })
       res.json({canvas_buffer})
    } catch (error) {
       res.json({error})
