@@ -179,7 +179,7 @@ Common failures:
 
 - **Cache missing or stale:** run `npm run tiles:index` from the root.
 - **Port 3004 already in use:** stop the existing supervisor or isolated tile service.
-- **Coverage initialization is slow:** inspect remote CSV progress in the dated log; the health endpoint is available while coverage loads.
+- **Coverage preload is slow:** inspect remote CSV progress in the dated log; the supervisor starts the preload after all services are healthy, and HTTP and health endpoints remain available while classification manifests load.
 - **Coverage and cache counts differ:** compare unique coverage counts with the cache's verified packet count. The remote CSV and local cache may be different snapshots.
 - **Shared import cannot be resolved:** restore this repository to `fracto/servers/fracto-tiles-server/`.
 - **Startup update is blocked:** commit, stash, or revert tracked changes in this repository.

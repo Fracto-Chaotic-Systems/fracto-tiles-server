@@ -8,7 +8,7 @@ export const handle_tile_coverage = async (req, res) => {
       x: re,
       y: im,
    }
-   const coverage = detect_coverage(focal_point, scope)
+   const coverage = await detect_coverage(focal_point, scope)
    // console.log('coverage', coverage)
    res.json({coverage})
 }

@@ -4,7 +4,9 @@ import {FRACTO_TILES_PORT} from '../../constants.js'
 
 import {handle_main_status} from './handlers/status.js'
 import {handle_tile} from './handlers/tile.js'
-import {initialize_coverage} from '../../sdk/FractoCoverageUtils.js'
+import {
+   initialize_coverage,
+} from '../../sdk/FractoCoverageUtils.js'
 import {handle_logs} from './handlers/logs.js'
 import {handle_get_canvas_buffer} from './handlers/get_canvas_buffer.js'
 import {handle_tile_coverage} from './handlers/tile_coverage.js'
@@ -16,6 +18,7 @@ import {handle_manifest} from './handlers/handle_manifest.js'
 import {handle_cache_status} from './handlers/cache_status.js'
 import {handle_metrics, record_request} from './handlers/metrics.js'
 import {handle_benchmark_results} from './handlers/benchmark_results.js'
+import {handle_preload_coverage} from './handlers/preload_coverage.js'
 
 let latest_level = null
 console.log('Loading compiled tile index cache...')
@@ -40,7 +43,7 @@ app.use((req, res, next) => {
 app.listen(FRACTO_TILES_PORT, () => {
    console.log(chalk.green(`fracto-tiles-server is running on http://localhost:${FRACTO_TILES_PORT}`))
    initialize_coverage(() => {
-      console.log(chalk.blue('coverage is initialized, tile generation may commence'))
+      console.log(chalk.blue('local indexed coverage is initialized; remote classification preload is awaiting supervisor'))
    })
 })
 
@@ -55,6 +58,7 @@ app.get('/manifest', handle_manifest)
 app.get('/cache_status', handle_cache_status)
 app.get('/metrics', handle_metrics)
 app.get('/benchmark_results', handle_benchmark_results)
+app.get('/preload_coverage', handle_preload_coverage)
 
 setInterval(() => {
    FractoTileCache.trim_cache()

@@ -59,6 +59,6 @@ export const handle_heat_map_buffer = async (req, res) => {
    // const coverage = all_level_tiles.map((level_tiles) => {
    //    return level_tiles.map((tile) => tile.short_code)
    // })
-   const coverage = detect_coverage(focal_point, scope)
+   const coverage = await detect_coverage(focal_point, scope)
    res.json({heat_map_buffer, coverage})
 }
