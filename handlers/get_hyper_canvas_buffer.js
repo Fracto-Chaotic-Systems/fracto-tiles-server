@@ -1,5 +1,7 @@
+import {
+   init_canvas_buffer
+} from "../../../sdk/FractoTileData.js";
 import FractoHyperCalc from "../../../sdk/FractoHyperCalc.js";
-import {raster_worker_pool} from '../raster_worker_pool.js'
 
 export const fill_hyper_canvas_buffer = async (
    canvas_buffer,
@@ -37,8 +39,15 @@ export const handle_get_hyper_canvas_buffer = async (req, res) => {
       y: parseFloat(req.query.focal_point_y),
    }
    const aspect_ratio = parseFloat(req.query.aspect_ratio)
-   const canvas_buffer = await raster_worker_pool.run({
-      type: 'hyper_canvas_buffer', width_px, focal_point, scope, aspect_ratio,
-   })
+   const canvas_buffer = init_canvas_buffer(width_px, aspect_ratio);
+   console.log('handle_get_hyper_canvas_buffer filling buffer')
+   fill_hyper_canvas_buffer(
+      canvas_buffer,
+      width_px,
+      focal_point,
+      scope,
+      aspect_ratio,
+   )
+   console.log('handle_get_hyper_canvas_buffer returns')
    res.json({canvas_buffer})
 }
