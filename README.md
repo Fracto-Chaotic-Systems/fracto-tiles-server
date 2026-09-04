@@ -125,7 +125,7 @@ Consumers should not depend on these two endpoints until their handlers are comp
 
 ## Index generation utilities
 
-`tile_indexer.js` generates JSON packet files and `packet_manifest.json` from the remote indexed short-code CSV. It is an offline maintenance utility, not part of normal server startup. The manifest generator counts both full and final partial packets.
+`tile_indexer.js` generates JSON packet files and `packet_manifest.json` from the remote indexed short-code CSV. The root `refresh_tile_index.js` workflow also runs `build_coverage_cache.js`, which packages the blank, interior, and needs-update classification CSVs into the same published generation. These are offline maintenance utilities, not part of normal server startup.
 
 Other maintenance scripts include:
 
