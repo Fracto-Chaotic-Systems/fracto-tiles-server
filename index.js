@@ -29,6 +29,19 @@ const cache_metadata = load_tile_index_cache(progress => {
    }
 })
 console.log(`Loaded ${cache_metadata.packet_count} cached packets for ${cache_metadata.tile_count} tiles`)
+const format_time_ago = timestamp => {
+   const elapsed_seconds = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000))
+   if (elapsed_seconds < 60) return `${elapsed_seconds} sec ago`
+   const elapsed_minutes = Math.floor(elapsed_seconds / 60)
+   if (elapsed_minutes < 60) return `${elapsed_minutes} min ago`
+   const elapsed_hours = Math.floor(elapsed_minutes / 60)
+   if (elapsed_hours < 24) return `${elapsed_hours} hr ago`
+   const elapsed_days = Math.floor(elapsed_hours / 24)
+   return `${elapsed_days} day${elapsed_days === 1 ? '' : 's'} ago`
+}
+if (cache_metadata.created_at) {
+   console.log(`Tile index generated at ${cache_metadata.created_at} (${format_time_ago(cache_metadata.created_at)})`)
+}
 
 const app = express()
 app.use((req, res, next) => {
