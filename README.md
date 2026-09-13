@@ -110,7 +110,7 @@ Calculates a hyper-complex raster directly. Query parameters are `width_px`, `fo
 
 ### `GET /heat_map_buffer`
 
-Builds a square tile-level heat map and returns coverage data. Query parameters are `width_px`, `focal_point_x`, `focal_point_y`, and `scope`. Returns `{ "heat_map_buffer": ..., "coverage": ... }`.
+Builds a square tile-level heat map and returns coverage data. Query parameters are `width_px`, `focal_point_x`, `focal_point_y`, and `scope`. Returns `{ "heat_map_buffer": ..., "coverage": ..., "timings_ms": { "index_lookup", "rasterization", "coverage", "total" } }`. The coverage calculation reuses the spatial lookup performed for the heat map, and the timing fields expose the major server-side stages for profiling.
 
 ### `GET /manifest`
 
