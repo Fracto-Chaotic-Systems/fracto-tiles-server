@@ -23,3 +23,26 @@ export const handle_automation = async (req, res) => {
   }
 };
 
+/**
+ * Create a Tiles automation job through the data server.
+ *
+ * @param {import("express").Request} req JSON automation record body.
+ * @param {import("express").Response} res Created record id and insert result.
+ */
+export const handle_automation_create = async (req, res) => {
+  try {
+    const response = await fetch(`http://${data_host}:${data_port}/automation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body || {}),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      res.status(response.status).json(result);
+      return;
+    }
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(502).json({ error: error.message });
+  }
+};

@@ -19,8 +19,7 @@ import {handle_cache_status} from './handlers/cache_status.js'
 import {handle_metrics, record_request} from './handlers/metrics.js'
 import {handle_benchmark_results} from './handlers/benchmark_results.js'
 import {handle_preload_coverage} from './handlers/preload_coverage.js'
-import { initialize_automation_table } from './handlers/initialize_automation.js'
-import { handle_automation } from './handlers/handle_automation.js'
+import { handle_automation, handle_automation_create } from './handlers/handle_automation.js'
 
 let latest_level = null
 console.log('Loading compiled tile index cache...')
@@ -46,6 +45,7 @@ if (cache_metadata.created_at) {
 }
 
 const app = express()
+app.use(express.json())
 app.use((req, res, next) => {
    const started = Date.now()
    res.once('finish', () => record_request(res, Date.now() - started))
@@ -59,9 +59,6 @@ app.listen(FRACTO_TILES_PORT, () => {
    console.log(chalk.green(`fracto-tiles-server is running on http://localhost:${FRACTO_TILES_PORT}`))
    initialize_coverage(() => {
       console.log(chalk.blue('local indexed coverage is initialized; remote classification preload is awaiting supervisor'))
-   })
-   initialize_automation_table().catch(error => {
-      console.error(chalk.red(`automation table initialization failed: ${error.message}`))
    })
 })
 
@@ -78,6 +75,7 @@ app.get('/metrics', handle_metrics)
 app.get('/benchmark_results', handle_benchmark_results)
 app.get('/preload_coverage', handle_preload_coverage)
 app.get('/automation', handle_automation)
+app.post('/automation', handle_automation_create)
 
 setInterval(() => {
    FractoTileCache.trim_cache()
