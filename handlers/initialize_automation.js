@@ -7,6 +7,16 @@ const data_request_timeout_ms = Number(
   process.env.FRACTO_DATA_REQUEST_TIMEOUT_MS || 10000,
 );
 
+/** States supported by an automation job record. */
+export const AUTOMATION_STATES = [
+  "draft",
+  "ready",
+  "running",
+  "paused",
+  "failed",
+  "complete",
+];
+
 /** Shared automation schema used by Tiles, Assets, and future servers. */
 export const AUTOMATION_TABLE_DEFINITION = {
   table: "automation",
@@ -23,6 +33,20 @@ export const AUTOMATION_TABLE_DEFINITION = {
       name: "automation_type",
       type: "VARCHAR(100)",
       nullable: false,
+    },
+    {
+      name: "state",
+      type: "VARCHAR(16)",
+      nullable: false,
+      default_value: "draft",
+    },
+    {
+      name: "run_start",
+      type: "DATETIME",
+    },
+    {
+      name: "run_stop",
+      type: "DATETIME",
     },
     {
       name: "created_at",
