@@ -10,7 +10,7 @@ const data_port = Number(process.env.FRACTO_DATA_PORT || 3002);
 export const handle_automation = async (req, res) => {
   try {
     const response = await fetch(
-      `http://${data_host}:${data_port}/automation?automation_type=tiles`,
+      `http://${data_host}:${data_port}/automation?automation_type=tiles&state=ready&order=asc&limit=10`,
     );
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {

@@ -38,7 +38,7 @@ export const AUTOMATION_TABLE_DEFINITION = {
       name: "state",
       type: "VARCHAR(16)",
       nullable: false,
-      default_value: "draft",
+      default_value: "ready",
     },
     {
       name: "run_start",
