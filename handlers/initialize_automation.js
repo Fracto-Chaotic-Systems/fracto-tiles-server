@@ -62,6 +62,7 @@ export const AUTOMATION_TABLE_DEFINITION = {
       on_update_current_timestamp: true,
     },
     { name: "tasks", type: "JSON", nullable: false },
+    { name: "checkpoint", type: "JSON" },
   ],
 };
 

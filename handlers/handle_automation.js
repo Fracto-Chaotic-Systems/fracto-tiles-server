@@ -70,3 +70,30 @@ export const handle_automation_claim = async (req, res) => {
     res.status(502).json({ error: error.message });
   }
 };
+
+/**
+ * Update a claimed Tiles automation job through the data server.
+ *
+ * @param {import("express").Request} req Numeric job id and update body.
+ * @param {import("express").Response} res Update result.
+ */
+export const handle_automation_update = async (req, res) => {
+  try {
+    const response = await fetch(
+      `http://${data_host}:${data_port}/automation/${req.params.id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body || {}),
+      },
+    );
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      res.status(response.status).json(result);
+      return;
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(502).json({ error: error.message });
+  }
+};
