@@ -19,7 +19,7 @@ import {handle_cache_status} from './handlers/cache_status.js'
 import {handle_metrics, record_request} from './handlers/metrics.js'
 import {handle_benchmark_results} from './handlers/benchmark_results.js'
 import {handle_preload_coverage} from './handlers/preload_coverage.js'
-import { handle_automation, handle_automation_create } from './handlers/handle_automation.js'
+import { handle_automation, handle_automation_create, handle_automation_claim } from './handlers/handle_automation.js'
 
 let latest_level = null
 console.log('Loading compiled tile index cache...')
@@ -76,6 +76,7 @@ app.get('/benchmark_results', handle_benchmark_results)
 app.get('/preload_coverage', handle_preload_coverage)
 app.get('/automation', handle_automation)
 app.post('/automation', handle_automation_create)
+app.post('/automation/claim', handle_automation_claim)
 
 setInterval(() => {
    FractoTileCache.trim_cache()

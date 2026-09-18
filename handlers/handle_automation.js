@@ -46,3 +46,27 @@ export const handle_automation_create = async (req, res) => {
     res.status(502).json({ error: error.message });
   }
 };
+
+/**
+ * Claim the oldest ready Tiles automation job through the data server.
+ *
+ * @param {import("express").Request} req Automation claim request body.
+ * @param {import("express").Response} res Claimed job or null.
+ */
+export const handle_automation_claim = async (req, res) => {
+  try {
+    const response = await fetch(`http://${data_host}:${data_port}/automation/claim`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body || {}),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      res.status(response.status).json(result);
+      return;
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(502).json({ error: error.message });
+  }
+};
