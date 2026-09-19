@@ -45,7 +45,10 @@ if (cache_metadata.created_at) {
 }
 
 const app = express()
-app.use(express.json())
+// Automation jobs may contain thousands of shortcodes. Keep this configurable
+// for installations with larger or stricter request-size requirements.
+const json_body_limit = process.env.FRACTO_JSON_BODY_LIMIT || '25mb'
+app.use(express.json({limit: json_body_limit}))
 app.use((req, res, next) => {
    const started = Date.now()
    res.once('finish', () => record_request(res, Date.now() - started))
