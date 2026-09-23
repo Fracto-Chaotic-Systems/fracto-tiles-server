@@ -1,7 +1,7 @@
 import {
    fill_canvas_buffer,
    init_canvas_buffer
-} from "../../../sdk/FractoTileData.js";
+} from "@fracto/sdk/FractoTileData.js";
 
 export const handle_get_canvas_buffer = async (req, res) => {
    try {

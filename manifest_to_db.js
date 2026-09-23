@@ -1,4 +1,4 @@
-import {collect_category_tiles} from "../../sdk/FractoCoverageUtils.js";
+import {collect_category_tiles} from "@fracto/sdk/FractoCoverageUtils.js";
 import {FRACTO_DATA_PORT} from "../../constants.js";
 import {
    bounds_from_short_code,

@@ -1,4 +1,4 @@
-import FractoTileCache from '../../../sdk/FractoTileCache.js'
+import FractoTileCache from '@fracto/sdk/FractoTileCache.js'
 
 const HISTORY_LIMIT = 60
 const HISTORY_INTERVAL_MS = 5000

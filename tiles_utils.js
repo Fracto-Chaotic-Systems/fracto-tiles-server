@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import {TILE_DATA_DIRECTORY} from '../../sdk/FractoTilePaths.js'
+import {TILE_DATA_DIRECTORY} from '@fracto/sdk/FractoTilePaths.js'
 
 const SEPARATOR = path.sep;
 const TILES_DIR = TILE_DATA_DIRECTORY;

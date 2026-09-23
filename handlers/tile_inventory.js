@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import {tile_index_paths} from '../../../sdk/FractoTilePaths.js'
+import {tile_index_paths} from '@fracto/sdk/FractoTilePaths.js'
 
 const INDEX_SOURCE_DIR = tile_index_paths().source
 

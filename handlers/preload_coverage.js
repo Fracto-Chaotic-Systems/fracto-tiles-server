@@ -1,4 +1,4 @@
-import {preload_coverage_classifications} from '../../../sdk/FractoCoverageUtils.js'
+import {preload_coverage_classifications} from '@fracto/sdk/FractoCoverageUtils.js'
 
 export const handle_preload_coverage = (req, res) => {
    // Start in the background so the supervisor does not wait for large CSVs.

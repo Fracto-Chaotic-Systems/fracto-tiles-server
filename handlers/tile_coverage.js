@@ -1,4 +1,4 @@
-import {detect_coverage} from "../../../sdk/FractoCoverageUtils.js";
+import {detect_coverage} from "@fracto/sdk/FractoCoverageUtils.js";
 
 export const handle_tile_coverage = async (req, res) => {
    const scope = parseFloat(req.query.scope)

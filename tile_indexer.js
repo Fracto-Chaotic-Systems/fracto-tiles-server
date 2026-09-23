@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import FractoIndexedTiles from "../../sdk/FractoIndexedTiles.js";
+import FractoIndexedTiles from "@fracto/sdk/FractoIndexedTiles.js";
 
 const BIN_VERB_INDEXED = "indexed";
 let bin_verb = process.argv[2]

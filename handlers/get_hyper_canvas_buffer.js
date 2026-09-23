@@ -1,7 +1,7 @@
 import {
    init_canvas_buffer
-} from "../../../sdk/FractoTileData.js";
-import FractoHyperCalc from "../../../sdk/FractoHyperCalc.js";
+} from "@fracto/sdk/FractoTileData.js";
+import FractoHyperCalc from "@fracto/sdk/FractoHyperCalc.js";
 
 export const fill_hyper_canvas_buffer = async (
    canvas_buffer,

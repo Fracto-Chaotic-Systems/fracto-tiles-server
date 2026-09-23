@@ -1,5 +1,5 @@
-import {init_canvas_buffer, tiles_in_scope} from "../../../sdk/FractoTileData.js";
-import {detect_coverage} from "../../../sdk/FractoCoverageUtils.js";
+import {init_canvas_buffer, tiles_in_scope} from "@fracto/sdk/FractoTileData.js";
+import {detect_coverage} from "@fracto/sdk/FractoCoverageUtils.js";
 
 const MAX_LEVELS = 35
 
