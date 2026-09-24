@@ -1,6 +1,6 @@
 import express from 'express'
 import chalk from 'chalk'
-import {FRACTO_TILES_PORT} from '../../constants.js'
+const FRACTO_TILES_PORT = Number(process.env.FRACTO_TILES_PORT || 3004)
 
 import {handle_main_status} from './handlers/status.js'
 import {handle_tile} from './handlers/tile.js'

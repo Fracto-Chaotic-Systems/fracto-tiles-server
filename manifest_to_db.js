@@ -1,5 +1,5 @@
 import {collect_category_tiles} from "@fracto/sdk/FractoCoverageUtils.js";
-import {FRACTO_DATA_PORT} from "../../constants.js";
+const FRACTO_DATA_PORT = Number(process.env.FRACTO_DATA_PORT || 3002);
 import {
    bounds_from_short_code,
    dir_from_short_code
