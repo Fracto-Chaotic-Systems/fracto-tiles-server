@@ -1,4 +1,5 @@
 const data_host = process.env.FRACTO_DATA_HOST || "127.0.0.1";
+import { internal_service_headers } from "../../../utils/service_authorization.js";
 const data_port = Number(process.env.FRACTO_DATA_PORT || 3002);
 
 /**
@@ -11,6 +12,7 @@ export const handle_automation = async (req, res) => {
   try {
     const response = await fetch(
       `http://${data_host}:${data_port}/automation?automation_type=tiles&state=ready&order=asc&limit=10`,
+      { headers: internal_service_headers() },
     );
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -33,7 +35,7 @@ export const handle_automation_create = async (req, res) => {
   try {
     const response = await fetch(`http://${data_host}:${data_port}/automation`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: internal_service_headers({ "Content-Type": "application/json" }),
       body: JSON.stringify(req.body || {}),
     });
     const result = await response.json().catch(() => ({}));
@@ -57,7 +59,7 @@ export const handle_automation_claim = async (req, res) => {
   try {
     const response = await fetch(`http://${data_host}:${data_port}/automation/claim`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: internal_service_headers({ "Content-Type": "application/json" }),
       body: JSON.stringify(req.body || {}),
     });
     const result = await response.json().catch(() => ({}));
@@ -83,7 +85,7 @@ export const handle_automation_update = async (req, res) => {
       `http://${data_host}:${data_port}/automation/${req.params.id}`,
       {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: internal_service_headers({ "Content-Type": "application/json" }),
         body: JSON.stringify(req.body || {}),
       },
     );

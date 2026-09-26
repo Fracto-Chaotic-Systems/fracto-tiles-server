@@ -1,4 +1,5 @@
 import {collect_category_tiles} from "@fracto/sdk/FractoCoverageUtils.js";
+import { internal_service_headers } from "../../utils/service_authorization.js";
 const FRACTO_DATA_PORT = Number(process.env.FRACTO_DATA_PORT || 3002);
 import {
    bounds_from_short_code,
@@ -8,7 +9,7 @@ import {
 const fetch_level_codes = async (level) => {
    const url = `http://localhost:${FRACTO_DATA_PORT}/tile_coverage?level=${level}`
    try {
-      const response = await fetch(url)
+      const response = await fetch(url, { headers: internal_service_headers() })
       return await response.json()
    } catch (e) {
       console.log(e.message)
@@ -19,7 +20,7 @@ const fetch_level_codes = async (level) => {
 const fetch_tile = async (short_code) => {
    const url = `http://localhost:${FRACTO_DATA_PORT}/tile?short_code=${short_code}`
    try {
-      const response = await fetch(url)
+      const response = await fetch(url, { headers: internal_service_headers() })
       return await response.json()
    } catch (e) {
       // console.log(e.message)
@@ -55,6 +56,7 @@ const add_tile = async (short_code) => {
          method: 'PUT', // Specify the method
          headers: {
             'Content-Type': 'application/json', // Inform the server about the data type
+            ...internal_service_headers(),
          },
          body: JSON.stringify(data), // The data payload
       });

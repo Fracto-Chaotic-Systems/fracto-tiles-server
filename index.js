@@ -20,6 +20,7 @@ import {handle_metrics, record_request} from './handlers/metrics.js'
 import {handle_benchmark_results} from './handlers/benchmark_results.js'
 import {handle_preload_coverage} from './handlers/preload_coverage.js'
 import { handle_automation, handle_automation_create, handle_automation_claim, handle_automation_update } from './handlers/handle_automation.js'
+import { require_enabled_user_if_configured } from '../../utils/service_authorization.js'
 
 let latest_level = null
 console.log('Loading compiled tile index cache...')
@@ -52,9 +53,15 @@ app.use(express.json({limit: json_body_limit}))
 app.use((req, res, next) => {
    const started = Date.now()
    res.once('finish', () => record_request(res, Date.now() - started))
-   res.setHeader('Access-Control-Allow-Origin', '*')
+   const origin = req.headers.origin
+   const ui_origin = process.env.FRACTO_UI_ORIGIN || `http://localhost:${process.env.FRACTO_UI_PORT || 3006}`
+   const credentialed = Boolean(origin && (origin === ui_origin || process.env.FRACTO_ALLOW_CORS_ALL === 'true'))
+   res.setHeader('Access-Control-Allow-Origin', credentialed ? origin : '*')
+   res.vary('Origin')
+   if (credentialed) res.setHeader('Access-Control-Allow-Credentials', 'true')
    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With')
+   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, X-Fracto-Service-Token')
+   if (req.method === 'OPTIONS') return res.status(204).end()
    next()
 })
 
@@ -66,6 +73,7 @@ app.listen(FRACTO_TILES_PORT, () => {
 })
 
 app.get('/', handle_main_status)
+app.use((req, res, next) => req.path === '/' ? next() : require_enabled_user_if_configured(req, res, next))
 app.get('/tile', handle_tile)
 app.get('/logs', handle_logs)
 app.get('/tile_coverage', handle_tile_coverage)
