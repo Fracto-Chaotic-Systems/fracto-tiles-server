@@ -2,6 +2,7 @@ import {
    fill_canvas_buffer,
    init_canvas_buffer
 } from "@fracto/sdk/FractoTileData.js";
+import {TileSourceError} from "@fracto/sdk/FractoTileSource.js";
 
 export const handle_get_canvas_buffer = async (req, res) => {
    try {
@@ -28,6 +29,14 @@ export const handle_get_canvas_buffer = async (req, res) => {
       )
       res.json({canvas_buffer})
    } catch (error) {
+      if (error instanceof TileSourceError) {
+         return res.status(503).json({
+            error: 'Authoritative tile source read failed',
+            code: error.code,
+            kind: error.kind,
+            short_code: error.short_code,
+         })
+      }
       res.json({error})
    }
 }

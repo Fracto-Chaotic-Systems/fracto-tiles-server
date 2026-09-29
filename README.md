@@ -76,7 +76,207 @@ Startup has two distinct data phases:
 
 Coverage CSV files come from the `fracto-prod` endpoint in the root `config/network.json` and include `indexed`, `blank`, `interior`, and `needs_update` short codes. They may represent a newer dataset than the local packet cache. Logs distinguish raw CSV rows from the unique short codes retained in per-level sets.
 
-The service trims its in-memory tile cache every ten seconds.
+The [tile data access and cache lifecycle](#tile-data-access-and-cache-lifecycle)
+section below describes source fetching, filesystem storage, and memory trimming.
+
+## Tile data access and cache lifecycle
+
+Tile access uses three distinct data layers. The compiled index described above
+is metadata used to select the indexed tiles that cover a requested region. It
+is built from the local packet corpus and loaded into memory before the service
+opens port 3004. It is separate from both the compressed tile files and the
+runtime cache of decoded tile data.
+
+For each selected tile, `FractoTileCache.get_tile()` checks these layers in
+order:
+
+1. **In-memory tile cache:** A previously loaded tile is returned directly as
+   decoded data, avoiding file I/O, download, and decompression. Access updates
+   the tile's last-access time.
+2. **Persistent filesystem cache:** If the tile is not in memory, its `.gz`
+   file is read from the tile-data directory and decompressed. The directory is
+   `FRACTO_TILE_DATA_DIR` when configured, otherwise the root `tiles/` directory;
+   Docker mounts the production volume at `/var/lib/fracto/tiles`. Tile names
+   are stored in nested directories derived from their short codes.
+3. **Source of truth:** If there is no local tile file, the service fetches
+   `<level-directory>/<short-code>.gz` from the `fracto-prod` URL in the root
+   `config/network.json`. The response must be HTTP 200 and valid gzip data
+   before it is accepted. In writable mode it is downloaded to a temporary file
+   and atomically renamed into the filesystem cache, then decoded and parsed for
+   the request. Failed responses and invalid tile data are counted as failures;
+malformed JSON discovered after the rename leaves the compressed file in the
+filesystem cache and will be encountered again on a later request.
+
+The request path is therefore:
+
+```text
+HTTP raster request
+  -> compiled in-memory tile index selects short codes
+  -> decoded memory cache
+  -> remote-cache mode: persistent .gz cache -> network source when absent
+  -> local-source mode: authoritative mounted .gz file when absent from memory
+```
+
+The compiled index is a selection structure, not another tile-payload cache.
+Both modes use the decoded memory cache after loading a tile. In remote-cache
+mode the filesystem cache is checked before the network source and writable
+production stores successful downloads there. In local-source mode the
+authoritative tree replaces those two lower layers: each memory miss reads the
+mounted source file, with no network fallback and no persistent copy.
+
+Concurrent requests for the same tile share one in-flight load or download.
+Once loaded, the decoded tile is retained in memory. The tile service trims
+that memory cache every ten seconds; raster completion can also schedule a
+trim. Trimming is based on inactivity, not least-recently-used ranking or a
+strict maximum size: when at least 750 tiles are resident, entries idle for
+more than two minutes are removed. If the cache contains more than 1,250 tiles,
+the idle timeout is shortened to one minute. These thresholds and timeouts are
+currently constants in `sdk/FractoTileCache.js`, not environment settings.
+Frequently accessed tiles remain available because each memory hit refreshes
+its last-access time. `/cache_status` reports current memory usage, evictions,
+and the configured threshold values. It identifies `source_mode` and reports
+local-source reads and failures separately from demand-cache disk hits and
+remote downloads. Its `last_source_error` includes a safe error kind and tile
+short code without a filesystem path; no source or cache path is included in
+the response. In local-source mode, memory and in-flight cache identities also
+include the source generation and tile short code.
+
+Production may write downloaded tile files to its persistent volume. Development
+sets `FRACTO_TILE_CACHE_READ_ONLY=true`: it can reuse existing files, but an
+uncached tile is downloaded and decoded for the current process without being
+written to disk. Writable downloads are refused when free disk space is below
+`FRACTO_TILE_MIN_FREE_BYTES`, which defaults to 1 GiB. The index-generation
+cache has a separate lifecycle and is refreshed with `npm run tiles:index`;
+tile-file downloads do not update or rebuild that index.
+
+### Local-source deployment contract
+
+The local-source variant is intended for a tile server running on the host that
+stores the authoritative tile files. Its configuration contract is:
+
+- Select the mode explicitly with `FRACTO_TILE_SOURCE_MODE=local`, provide
+  `FRACTO_TILE_SOURCE_DIR` as the absolute path to the source tree, and set
+  `FRACTO_TILE_SOURCE_GENERATION` to a non-secret immutable dataset identifier.
+- The source tree is read-only to the tile service and contains files at
+  `L<two-digit-level>/<short-code>.gz`, matching the cloud source layout.
+- A tile request reads and validates that source file directly. It does not
+  create a persistent tile-cache copy or contact the network.
+- A missing or invalid source file is an error. Local-source mode never falls
+  back to remote fetching or to `FRACTO_TILE_DATA_DIR`. Tile-load errors stay
+  distinct through raster generation, and `/canvas_buffer` responds with HTTP
+  503 and a structured error containing the tile short code but no filesystem
+  path.
+- `FRACTO_TILE_DATA_DIR` continues to configure the existing demand-filled
+  cache in remote mode. It is not the source path in local-source mode.
+- The compiled tile index remains a separate required input. The source root
+  must contain `fracto-tile-release.json` with schema version 1, the same
+  `source_generation` configured in the process, and the selected compiled
+  index's `index_fingerprint` (the compiled-index source descriptor
+  fingerprint) and `index_tile_count`. The compiled index metadata
+  independently records the same `tile_source_generation`.
+  Local preflight rejects a missing, malformed, or mismatched binding before
+  the service starts.
+- A source directory is immutable after publication. To update the data,
+  publish a new source directory and matching index generation, set the new
+  source path and a new identifier that is never reused for different tile
+  content, then restart the tile service. Never replace files in a live
+  generation; the process retains decoded tiles in memory.
+- Decoded tiles remain in the process memory cache. Its idle trim begins at 750
+  entries, uses a two-minute inactivity timeout through 1,250 entries, and uses
+  a one-minute timeout above 1,250. The thresholds are constants, not env
+  settings. The cache identity includes the immutable source-generation
+  identifier so different datasets cannot share entries.
+
+The local-source reader is selected by the dedicated startup command below.
+The ordinary startup commands continue to default to remote-cache mode.
+Use remote-cache for installations without direct access to authoritative tile
+files. Use local-source only when the authoritative dataset is available on the
+tile server's filesystem through a read-only mount. Installation and operation
+instructions, including recovery steps, are in
+[`DEPLOYMENT.md`](DEPLOYMENT.md).
+
+In `/cache_status`, `source_mode`, `source_generation`, `local_source_reads`,
+`local_source_failures`, and `last_source_error` distinguish direct source
+reads from the existing `disk_hits` and `downloads` counters. The generation is
+an operator-defined non-secret identifier. Status output does not include the
+source or cache directory path.
+
+#### Start the local-source service
+
+The startup script reads the root `.env` file when present; variables already
+provided by the process environment take precedence. Configure the source as a
+read-only, immutable generation directory, for example:
+
+```dotenv
+FRACTO_TILE_SOURCE_MODE=local
+FRACTO_TILE_SOURCE_DIR=/srv/fracto/tiles/source/generation-2026-09-27
+FRACTO_TILE_SOURCE_GENERATION=2026-09-27
+```
+
+The account running Fracto needs read and directory-search permission on the
+source tree; mount it read-only and verify access under the service's OS user.
+Prepare the matching compiled index from the same packet generation using
+`npm run tiles:index`; if the indexed packets or manifest need refreshing, run
+the `npm run tiles:refresh` workflow first. By default,
+`FRACTO_TILE_INDEX_DIR` selects the index root that contains the published
+`generations/` and `CURRENT` pointer. For a pinned generation,
+`FRACTO_TILE_INDEX_GENERATION_DIR` selects its completed directory directly.
+When preparing an index for local-source mode, set
+`FRACTO_TILE_SOURCE_MODE=local` and the release's
+`FRACTO_TILE_SOURCE_GENERATION` while compiling it. The compiled index
+metadata records that generation. After the matching source files are staged,
+run `npm run tiles:source-release` with the same source/index configuration;
+it writes the release manifest once and refuses to overwrite one already
+published. The preflight checks the generation binding, index fingerprint,
+index tile count, compiled packets, and one representative tile.
+
+The source-side manifest has this shape:
+
+```json
+{
+  "schema_version": 3,
+  "source_generation": "tiles-2026-09-release-1",
+  "index_fingerprint": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "index_tile_count": 123456,
+  "tile_validation": {
+    "method": "representative-tile-shape-v1",
+    "short_code": "12"
+  },
+  "created_at": "2026-09-27T12:00:00.000Z"
+}
+```
+
+The example fingerprint, count, and short code are illustrative. The manifest
+binds the configured source generation to the compiled index and records one
+representative tile check. It does not enumerate the corpus; missing or
+invalid tiles are reported when requested. Never reuse the generation
+identifier for a different source/index pairing.
+
+Run preflight without starting the server:
+
+```powershell
+npm run start:tiles-local-source -- --check
+```
+
+Start only the tile server after preflight passes:
+
+```powershell
+npm run start:tiles-local-source
+```
+
+The command runs in the foreground; Ctrl+C stops the tile server. It fails
+before launch for missing configuration, an unreadable source directory, an
+unexpected directory layout, a stale or incomplete compiled index, or a
+missing, unreadable, or malformed representative tile. The representative
+check does not scan the entire source tree, so publish a complete generation
+before switching production to it. If preflight reports a stale index, refresh
+or rebuild the matching index generation and run `--check` again.
+
+For updates, publish a new immutable source directory and matching compiled
+index generation, update the source path and generation identifier together,
+then restart this command. Never modify files in the active source directory or
+reuse its generation identifier for changed tile content. Runtime cache entries
+are separated by generation, and restarting clears the prior process's memory.
 
 ## HTTP endpoints
 
@@ -92,7 +292,7 @@ Returns coverage and generation categories around a focal point. Query parameter
 
 ### `GET /canvas_buffer`
 
-Builds a raster buffer from indexed tile data. Query parameters are `width_px`, `focal_point_x`, `focal_point_y`, `scope`, `aspect_ratio`, and `resolution_factor`. The turbo unresolved-pixel renderer is the default; select the stable legacy renderer with `strategy=legacy` or `FRACTO_RASTER_STRATEGY=legacy`. Returns `{ "canvas_buffer": ... }` or `{ "error": ... }`.
+Builds a raster buffer from indexed tile data. Query parameters are `width_px`, `focal_point_x`, `focal_point_y`, `scope`, `aspect_ratio`, and `resolution_factor`. The turbo unresolved-pixel renderer is the default; select the stable legacy renderer with `strategy=legacy` or `FRACTO_RASTER_STRATEGY=legacy`. Returns `{ "canvas_buffer": ... }` or `{ "error": ... }`. In local-source mode, a missing or invalid authoritative tile returns HTTP 503 with a structured tile-source error.
 
 ### Benchmark reports
 
