@@ -128,10 +128,14 @@ Concurrent requests for the same tile share one in-flight load or download.
 Once loaded, the decoded tile is retained in memory. The tile service trims
 that memory cache every ten seconds; raster completion can also schedule a
 trim. Trimming is based on inactivity, not least-recently-used ranking or a
-strict maximum size: when at least 750 tiles are resident, entries idle for
-more than two minutes are removed. If the cache contains more than 1,250 tiles,
-the idle timeout is shortened to one minute. These thresholds and timeouts are
-currently constants in `sdk/FractoTileCache.js`, not environment settings.
+strict maximum size. Remote-cache mode keeps its existing policy: when at least
+750 tiles are resident, entries idle for more than two minutes are removed;
+above 1,250 tiles, the idle timeout is one minute. Local-source mode uses a
+smaller working set because it can reread authoritative files: trimming starts
+at 100 resident tiles after 30 seconds idle, and above 250 tiles the idle
+timeout is 15 seconds. These are soft thresholds, not hard caps; recently used
+tiles remain cached. The mode-specific values are constants in
+`sdk/FractoTileCache.js`, not environment settings.
 Frequently accessed tiles remain available because each memory hit refreshes
 its last-access time. `/cache_status` reports current memory usage, evictions,
 and the configured threshold values. It identifies `source_mode` and reports
@@ -181,11 +185,13 @@ stores the authoritative tile files. Its configuration contract is:
   source path and a new identifier that is never reused for different tile
   content, then restart the tile service. Never replace files in a live
   generation; the process retains decoded tiles in memory.
-- Decoded tiles remain in the process memory cache. Its idle trim begins at 750
-  entries, uses a two-minute inactivity timeout through 1,250 entries, and uses
-  a one-minute timeout above 1,250. The thresholds are constants, not env
-  settings. The cache identity includes the immutable source-generation
-  identifier so different datasets cannot share entries.
+- Decoded tiles remain in the process memory cache. Local-source mode starts
+  trimming at 100 entries after 30 seconds idle, and uses a 15-second idle
+  timeout above 250 entries. These are soft thresholds, not hard caps; active
+  tiles remain cached. Remote-cache mode retains its 750/1,250-entry thresholds
+  and two-minute/one-minute idle timeouts. The values are constants, not env
+  settings. Cache identity includes the immutable source-generation identifier
+  so different datasets cannot share entries.
 
 The local-source reader is selected by the dedicated startup command below.
 The ordinary startup commands continue to default to remote-cache mode.
