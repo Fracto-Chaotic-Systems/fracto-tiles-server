@@ -21,6 +21,7 @@ import {handle_benchmark_results} from './handlers/benchmark_results.js'
 import {handle_preload_coverage} from './handlers/preload_coverage.js'
 import { handle_automation, handle_automation_create, handle_automation_claim, handle_automation_update } from './handlers/handle_automation.js'
 import { require_enabled_user_if_configured } from '../../utils/service_authorization.js'
+import { record_runtime_metric } from '../../utils/windowed_metrics.js'
 
 let latest_level = null
 console.log('Loading compiled tile index cache...')
@@ -52,7 +53,14 @@ const json_body_limit = process.env.FRACTO_JSON_BODY_LIMIT || '25mb'
 app.use(express.json({limit: json_body_limit}))
 app.use((req, res, next) => {
    const started = Date.now()
-   res.once('finish', () => record_request(res, Date.now() - started))
+   const is_canvas_buffer = req.method === 'GET' && req.path === '/canvas_buffer'
+   res.once('finish', () => {
+      const duration_ms = Date.now() - started
+      record_request(res, duration_ms)
+      if (is_canvas_buffer) {
+         record_runtime_metric('canvas_buffer_request', duration_ms, res.statusCode)
+      }
+   })
    const origin = req.headers.origin
    const ui_origin = process.env.FRACTO_UI_ORIGIN || `http://localhost:${process.env.FRACTO_UI_PORT || 3006}`
    const credentialed = Boolean(origin && (origin === ui_origin || process.env.FRACTO_ALLOW_CORS_ALL === 'true'))

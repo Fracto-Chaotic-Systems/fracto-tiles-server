@@ -294,6 +294,33 @@ Returns coverage and generation categories around a focal point. Query parameter
 
 Builds a raster buffer from indexed tile data. Query parameters are `width_px`, `focal_point_x`, `focal_point_y`, `scope`, `aspect_ratio`, and `resolution_factor`. The turbo unresolved-pixel renderer is the default; select the stable legacy renderer with `strategy=legacy` or `FRACTO_RASTER_STRATEGY=legacy`. Returns `{ "canvas_buffer": ... }` or `{ "error": ... }`. In local-source mode, a missing or invalid authoritative tile returns HTTP 503 with a structured tile-source error.
 
+### Measuring authenticated render bursts
+
+The tile service emits a privacy-safe `fracto_metric_window` summary every ten
+seconds when it has samples for `canvas_buffer_request`. Each summary contains
+the request count, average and maximum server duration, and HTTP status counts.
+The measurement begins before authentication middleware, so duration includes
+the session check and raster generation. It never records query parameters,
+focal points, cookies, or user identity. The data server emits
+`auth_user_record_query` summaries for connection-plus-query duration, while
+the root main server emits `auth_user_record_lookup` summaries for the complete
+internal HTTP round trip.
+
+On EC2, use the browser Network panel filtered to `canvas_buffer` to count and
+time requests from one page refresh or rapid zoom sequence, without exporting
+a HAR file that may contain cookies. Collect server summaries for the same
+time window with:
+
+```sh
+docker compose -f compose.yaml -f compose.local-tiles.yaml logs --since=2m fracto \
+  | grep 'fracto_metric_window'
+```
+
+Each process aggregates locally, so the Docker output may contain separate
+canvas-request and user-lookup summaries. Compare their `started_at` and
+`ended_at` windows to the browser test. A missing metric in a window means
+that process recorded no samples for that metric during the interval.
+
 ### Benchmark reports
 
 The root benchmark command writes dated JSON reports to the runtime-only
