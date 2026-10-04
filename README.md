@@ -365,7 +365,10 @@ Other maintenance scripts include:
 - `tile_inventory.js`: tile inventory operations.
 - `tile_manifest.js`: manifest-related generation.
 - `manifest_to_db.js`: sends manifest-derived coverage to the data service.
-- `backup.js`: backup operations.
+- `backup.js`: host-side tile backup operation. It imports shared SDK modules
+  by repository-relative path so it can run outside Docker and access the host
+  tile files directly; run it from the root repository with `npm run
+  tiles:backup`.
 
 Review a maintenance script's paths and side effects before running it. These scripts are not exposed through package aliases and may assume root data directories or another service is available.
 
