@@ -72,9 +72,9 @@ The local `npm start` command uses `nodemon`. Do not run it while the root super
 Startup has two distinct data phases:
 
 1. The compiled local tile index is synchronously validated and loaded before port 3004 opens.
-2. Coverage categories are downloaded asynchronously after the server begins listening.
+2. After all services are healthy, the supervisor triggers asynchronous classification preloading. Indexed coverage is derived from the compiled index; blank, interior, and needs-update classifications load from the selected generation when packaged artifacts are available.
 
-Coverage CSV files come from the `fracto-prod` endpoint in the root `config/network.json` and include `indexed`, `blank`, `interior`, and `needs_update` short codes. They may represent a newer dataset than the local packet cache. Logs distinguish raw CSV rows from the unique short codes retained in per-level sets.
+When packaged classification artifacts are unavailable, a temporary fallback loads category manifests through the SDK: local-source mode reads local listings, while remote-cache mode uses the configured HTTP source. Remote listings may represent a newer dataset than the compiled index. The fallback is marked for removal after verified generations consistently include classification artifacts.
 
 The [tile data access and cache lifecycle](#tile-data-access-and-cache-lifecycle)
 section below describes source fetching, filesystem storage, and memory trimming.
@@ -173,18 +173,18 @@ stores the authoritative tile files. Its configuration contract is:
 - `FRACTO_TILE_DATA_DIR` continues to configure the existing demand-filled
   cache in remote mode. It is not the source path in local-source mode.
 - The compiled tile index remains a separate required input. The source root
-  must contain `fracto-tile-release.json` with schema version 1, the same
+  must contain `fracto-tile-release.json` with schema version 3 (or a supported legacy schema-2 manifest), the same
   `source_generation` configured in the process, and the selected compiled
   index's `index_fingerprint` (the compiled-index source descriptor
   fingerprint) and `index_tile_count`. The compiled index metadata
   independently records the same `tile_source_generation`.
   Local preflight rejects a missing, malformed, or mismatched binding before
   the service starts.
-- A source directory is immutable after publication. To update the data,
-  publish a new source directory and matching index generation, set the new
-  source path and a new identifier that is never reused for different tile
-  content, then restart the tile service. Never replace files in a live
-  generation; the process retains decoded tiles in memory.
+- Keep the active corpus/index pairing stable while the service is running;
+  it retains decoded tiles in memory. The source may remain at a permanent
+  path and does not require versioned directories. When the pairing changes,
+  prepare the matching index and release manifest, use a new logical
+  dataset/index ID, and restart. See `DEPLOYMENT.md` for updates and recovery.
 - Decoded tiles remain in the process memory cache. Local-source mode starts
   trimming at 100 entries after 30 seconds idle, and uses a 15-second idle
   timeout above 250 entries. These are soft thresholds, not hard caps; active
@@ -278,11 +278,11 @@ check does not scan the entire source tree, so publish a complete generation
 before switching production to it. If preflight reports a stale index, refresh
 or rebuild the matching index generation and run `--check` again.
 
-For updates, publish a new immutable source directory and matching compiled
-index generation, update the source path and generation identifier together,
-then restart this command. Never modify files in the active source directory or
-reuse its generation identifier for changed tile content. Runtime cache entries
-are separated by generation, and restarting clears the prior process's memory.
+For updates, prepare the matching source/index pairing and release manifest,
+update its logical dataset/index ID, then restart this command. The source may
+remain at its permanent path; versioned directories are not required. Keep
+active data stable until the service is stopped, and follow `DEPLOYMENT.md` for
+release preparation and recovery. Restarting clears decoded memory caches.
 
 ## HTTP endpoints
 
