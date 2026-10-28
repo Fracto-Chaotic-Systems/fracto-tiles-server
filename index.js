@@ -22,6 +22,11 @@ import {handle_preload_coverage} from './handlers/preload_coverage.js'
 import { handle_automation, handle_automation_create, handle_automation_claim, handle_automation_update } from './handlers/handle_automation.js'
 import { require_enabled_user_if_configured } from '../../utils/service_authorization.js'
 import { record_runtime_metric } from '../../utils/windowed_metrics.js'
+import {create_terrain_cache_handlers} from './terrain/Jobs.js'
+import {initialize_mesh_storage} from '../../sdk/terrain/Paths.js'
+import {create_mesh_handler} from './terrain/Access.js'
+import {MeshInventoryStore} from '../../sdk/terrain/InventoryStore.js'
+import {create_mesh_heat_map_handler} from './terrain/HeatMap.js'
 
 let latest_level = null
 console.log('Loading compiled tile index cache...')
@@ -47,6 +52,16 @@ if (cache_metadata.created_at) {
 }
 
 const app = express()
+await initialize_mesh_storage()
+const mesh_source_identity = {
+   index_fingerprint: cache_metadata.fingerprint,
+   source_mode: process.env.FRACTO_TILE_SOURCE_MODE || 'remote-cache',
+   source_generation: process.env.FRACTO_TILE_SOURCE_GENERATION || 'remote-default',
+}
+const mesh_inventory = await new MeshInventoryStore({source_identity: mesh_source_identity}).initialize()
+console.log('Mesh inventory ready', mesh_inventory.inventory.summary())
+const terrain_cache = create_terrain_cache_handlers({source_identity: mesh_source_identity, inventory_store: mesh_inventory})
+const handle_mesh = create_mesh_handler({source_identity: mesh_source_identity, inventory_store: mesh_inventory})
 // Automation jobs may contain thousands of shortcodes. Keep this configurable
 // for installations with larger or stricter request-size requirements.
 const json_body_limit = process.env.FRACTO_JSON_BODY_LIMIT || '25mb'
@@ -83,11 +98,20 @@ app.listen(FRACTO_TILES_PORT, () => {
 app.get('/', handle_main_status)
 app.use((req, res, next) => req.path === '/' ? next() : require_enabled_user_if_configured(req, res, next))
 app.get('/tile', handle_tile)
+app.get('/meshes/:short_code', handle_mesh)
+app.get('/mesh_inventory', (_req, res) => res.json(mesh_inventory.inventory.summary()))
+app.post('/mesh_inventory/reconcile', async (_req, res) => {
+   try { res.json(await mesh_inventory.reconcile({force: true})) }
+   catch { res.status(503).json({error: 'Mesh inventory reconciliation failed'}) }
+})
+app.post('/terrain-cache/jobs', terrain_cache.start)
+app.get('/terrain-cache/jobs/:id', terrain_cache.status)
 app.get('/logs', handle_logs)
 app.get('/tile_coverage', handle_tile_coverage)
 app.get('/canvas_buffer', handle_get_canvas_buffer)
 app.get('/hyper_canvas_buffer', handle_get_hyper_canvas_buffer)
 app.get('/heat_map_buffer', handle_heat_map_buffer)
+app.get('/mesh_heat_map_buffer', create_mesh_heat_map_handler(mesh_inventory.inventory))
 app.get('/manifest', handle_manifest)
 app.get('/cache_status', handle_cache_status)
 app.get('/metrics', handle_metrics)

@@ -143,3 +143,4 @@ tiles.csv
 
 # Benchmark reports
 benchmarks/
+terrain-cache/

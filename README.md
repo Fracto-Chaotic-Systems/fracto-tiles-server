@@ -1,5 +1,14 @@
 # fracto-tiles-server
 
+The freeform bailiwick panel can start a terrain-cache test through
+POST `/terrain-cache/jobs` and poll GET `/terrain-cache/jobs/:id`. Jobs cache
+short-code-indexed meshes at a native minimum resolution of 1000, preserving
+their region manifest for later flight-simulator assembly. See `terrain/README.md`
+and the shared SDK `terrain/README.md` for storage and geometry contracts.
+Mesh files persist beneath `meshes/` on the active tile volume, initialized
+before the service listens. GET `/meshes/:short_code` retrieves a prebuilt gzip
+mesh asset; its path mirrors the numerical tile's directory structure.
+
 Express service for loading Fracto's compiled tile index and serving tile-derived coverage, raster buffers, heat maps, and manifests. It listens on port 3004 and depends on shared SDK and configuration files from the parent Fracto repository.
 
 ## Repository layout requirement
@@ -286,7 +295,18 @@ release preparation and recovery. Restarting clears decoded memory caches.
 
 ## HTTP endpoints
 
-All endpoints currently use `GET`.
+Read endpoints use `GET`. Terrain jobs, inventory reconciliation and automation
+creation/claim use `POST`; automation updates use `PUT`.
+
+### `GET /mesh_heat_map_buffer`
+
+Returns a mesh availability heat map from the in-memory mesh inventory.
+Parameters are `width_px`, `focal_point_x`, `focal_point_y`, `scope`, and optional
+`aspect_ratio`. The result contains the level buffer, coverage counts, inventory
+revision, namespace, dimensions and timings. It performs no filesystem or
+numerical tile access. See `terrain/README.md` and the SDK terrain README for
+limits and the full response contract. The transforms page now uses this route
+and polls `/mesh_inventory` for availability changes.
 
 ### `GET /`
 
