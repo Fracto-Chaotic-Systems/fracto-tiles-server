@@ -27,6 +27,7 @@ import {initialize_mesh_storage} from '../../sdk/terrain/Paths.js'
 import {create_mesh_handler} from './terrain/Access.js'
 import {MeshInventoryStore} from '../../sdk/terrain/InventoryStore.js'
 import {create_mesh_heat_map_handler} from './terrain/HeatMap.js'
+import {create_runtime_terrain_handler} from './terrain/Runtime.js'
 import FractoIndexedTiles from '@fracto/sdk/FractoIndexedTiles.js'
 import {count_indexed_tiles_in_scope} from '../../sdk/terrain/TileCounts.js'
 
@@ -61,7 +62,11 @@ const mesh_source_identity = {
    source_generation: process.env.FRACTO_TILE_SOURCE_GENERATION || 'remote-default',
 }
 const mesh_inventory = await new MeshInventoryStore({source_identity: mesh_source_identity}).initialize()
-console.log('Mesh inventory ready', mesh_inventory.inventory.summary())
+const mesh_levels = mesh_inventory.inventory.summary().levels
+for (const {level, ready, total, stale, invalid} of mesh_levels) {
+   console.log(`Mesh inventory level ${level}: ${ready}/${total}/${stale}/${invalid}`)
+}
+if (!mesh_levels.length) console.log('Mesh inventory: no meshes')
 const terrain_cache = create_terrain_cache_handlers({source_identity: mesh_source_identity, inventory_store: mesh_inventory})
 const handle_mesh = create_mesh_handler({source_identity: mesh_source_identity, inventory_store: mesh_inventory})
 // Automation jobs may contain thousands of shortcodes. Keep this configurable
@@ -102,6 +107,8 @@ app.use((req, res, next) => req.path === '/' ? next() : require_enabled_user_if_
 app.get('/tile', handle_tile)
 app.get('/meshes/:short_code', handle_mesh)
 app.get('/mesh_inventory', (_req, res) => res.json(mesh_inventory.inventory.summary()))
+app.get('/mesh_terrain', create_runtime_terrain_handler(mesh_inventory.inventory, (level, focal_point, scope, aspect_ratio) =>
+   count_indexed_tiles_in_scope(FractoIndexedTiles.get_set_level('indexed', level), focal_point, scope, aspect_ratio)))
 app.post('/mesh_inventory/reconcile', async (_req, res) => {
    try { res.json(await mesh_inventory.reconcile({force: true})) }
    catch { res.status(503).json({error: 'Mesh inventory reconciliation failed'}) }

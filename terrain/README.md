@@ -24,7 +24,8 @@ current source/profile before returning bytes. Missing files return 404, stale
 files 409, invalid shortcodes 400, and unreadable/corrupt files 503. Reads never
 generate meshes or download numerical tiles. This route uses the same service
 authentication as the other tile routes. The SDK `read_mesh_file()` also decodes
-typed arrays for server-side consumers; browser assembly remains future work.
+typed arrays for server-side consumers; browser assembly uses the shared SDK
+decoder and the runtime terrain manifest.
 
 Before listening, the service initializes and verifies the mesh directory with
 an atomic write/rename/read-back probe. An unwritable store or mismatched layout
@@ -68,3 +69,7 @@ POST /mesh-transforms/jobs accepts {count, level, region: {focal_point: {x,y}, s
 Queue.js owns the shared single-worker queue (eight pending/active jobs, fifty retained terminal records, ten-minute job timeout). Stop terminates the worker and recovers pending inventory publications before returning counters. Completed mesh files remain available for a new selection or Resume. Terminal records discard tile arrays. Jobs are process-local; durable mesh files and inventory survive restart. Neighbor stitching remains deferred.
 
 Job snapshots include preview_short_code, the latest successfully published mesh sampled by progress. A failed source tile updates job counters without replacing this preview. Previews use the existing authenticated GET /meshes/:short_code binary endpoint.
+
+GET /mesh_terrain accepts focal_point_x, focal_point_y, scope, aspect_ratio (default 1), and minimum_resolution (default 1000). Runtime.js returns an uncached, read-only assembly manifest from the ready inventory and compiled numerical index. It reports the selected level, effective samples, unmet minimums, missing counts, placement bounds and file checksums. It reads no mesh or numerical files and never starts a cache job. Invalid input returns 400; inventory errors return 503. The SDK RuntimePlan contract defines fallback order and the 64-file display budget.
+
+Startup logs print one line per populated level as `Mesh inventory level N: ready/total/stale/invalid`. The full inventory metadata object is not dumped to the console. Empty inventories print `Mesh inventory: no meshes`.
