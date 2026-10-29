@@ -27,6 +27,8 @@ import {initialize_mesh_storage} from '../../sdk/terrain/Paths.js'
 import {create_mesh_handler} from './terrain/Access.js'
 import {MeshInventoryStore} from '../../sdk/terrain/InventoryStore.js'
 import {create_mesh_heat_map_handler} from './terrain/HeatMap.js'
+import FractoIndexedTiles from '@fracto/sdk/FractoIndexedTiles.js'
+import {count_indexed_tiles_in_scope} from '../../sdk/terrain/TileCounts.js'
 
 let latest_level = null
 console.log('Loading compiled tile index cache...')
@@ -105,13 +107,18 @@ app.post('/mesh_inventory/reconcile', async (_req, res) => {
    catch { res.status(503).json({error: 'Mesh inventory reconciliation failed'}) }
 })
 app.post('/terrain-cache/jobs', terrain_cache.start)
+app.post('/mesh-transforms/jobs', terrain_cache.start_region)
+app.post('/terrain-cache/jobs/:id/cancel', terrain_cache.cancel)
 app.get('/terrain-cache/jobs/:id', terrain_cache.status)
 app.get('/logs', handle_logs)
 app.get('/tile_coverage', handle_tile_coverage)
 app.get('/canvas_buffer', handle_get_canvas_buffer)
 app.get('/hyper_canvas_buffer', handle_get_hyper_canvas_buffer)
 app.get('/heat_map_buffer', handle_heat_map_buffer)
-app.get('/mesh_heat_map_buffer', create_mesh_heat_map_handler(mesh_inventory.inventory))
+app.get('/mesh_heat_map_buffer', create_mesh_heat_map_handler(mesh_inventory.inventory, {
+   count_tiles_in_scope: (level, focal_point, scope, aspect_ratio) =>
+      count_indexed_tiles_in_scope(FractoIndexedTiles.get_set_level('indexed', level), focal_point, scope, aspect_ratio),
+}))
 app.get('/manifest', handle_manifest)
 app.get('/cache_status', handle_cache_status)
 app.get('/metrics', handle_metrics)

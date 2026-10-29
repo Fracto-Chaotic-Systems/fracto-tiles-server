@@ -42,7 +42,8 @@ acknowledged begin/observe messages so progress follows durable index updates.
 Job completion/failure recovers pending writes after worker termination.
 `Access.js` observes retrievals to repair missing/corrupt inventory records.
 
-GET `/mesh_inventory` returns counts and revision. POST
+GET `/mesh_inventory` returns counts, revision and `inventory_epoch`, which
+identifies the revision history across index recovery. POST
 `/mesh_inventory/reconcile` verifies files, incorporates external additions or
 changes, and removes deleted entries. Both use existing authentication and
 the POST uses the existing mutation-origin checks. The SDK terrain README
@@ -55,3 +56,15 @@ namespace and inventory revision. Only ready meshes contribute; finer levels
 win and upper-half coverage is mirrored. Empty pixels have level 0. The route
 does not read files or use numerical tile classifications. See the SDK terrain
 README for query parameters, dimension/candidate limits and error responses.
+The production handler injects an in-memory compiled-index counter and includes
+`tile_count` and `can_do = tile_count - mesh_count` in each coverage row. Rows
+include tile-only levels as well as ready-mesh levels. This reads index metadata
+only; it neither downloads numerical tiles nor scans the filesystem.
+
+### Navigator transform jobs
+
+POST /mesh-transforms/jobs accepts {count, level, region: {focal_point: {x,y}, scope, aspect_ratio}}. It selects indexed tiles without ready meshes and returns {job} with HTTP 202. Invalid selections return 400, changed counts 409, queue saturation 429. GET /terrain-cache/jobs/:id polls both region and bailiwick jobs; POST /terrain-cache/jobs/:id/cancel stops either kind. Unknown IDs return 404. All routes retain service authentication and mutation-origin guards.
+
+Queue.js owns the shared single-worker queue (eight pending/active jobs, fifty retained terminal records, ten-minute job timeout). Stop terminates the worker and recovers pending inventory publications before returning counters. Completed mesh files remain available for a new selection or Resume. Terminal records discard tile arrays. Jobs are process-local; durable mesh files and inventory survive restart. Neighbor stitching remains deferred.
+
+Job snapshots include preview_short_code, the latest successfully published mesh sampled by progress. A failed source tile updates job counters without replacing this preview. Previews use the existing authenticated GET /meshes/:short_code binary endpoint.

@@ -1,9 +1,9 @@
 import { mesh_heat_map } from "../../../sdk/terrain/HeatMap.js";
 
-export function create_mesh_heat_map_handler(inventory) {
+export function create_mesh_heat_map_handler(inventory, options = {}) {
   return (req, res) => {
     try {
-      const result = mesh_heat_map(inventory, req.query);
+      const result = mesh_heat_map(inventory, req.query, options);
       // Availability can change without the navigator moving.
       res.setHeader("Cache-Control", "no-store");
       return res.json(result);
