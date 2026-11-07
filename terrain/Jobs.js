@@ -61,6 +61,7 @@ export function create_terrain_cache_handlers({
     timeout_ms,
   });
   return {
+    has_active_jobs: () => queue.busy(),
     start: async (req, res) => {
       const id = Number(req.body?.bailiwick_id);
       if (!Number.isSafeInteger(id) || id <= 0)

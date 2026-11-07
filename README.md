@@ -1,5 +1,11 @@
 # fracto-tiles-server
 
+Mesh file synchronization uses private `/internal/mesh-sync` endpoints through
+the admin service. Its sessions reserve the live mesh store against generation,
+validate and atomically publish received mesh assets, and register them in the
+local inventory. Numerical tiles and local journals are never transferred. See
+the admin service's `MESH_SYNC.md` for the peer workflow and configuration.
+
 The freeform bailiwick panel can start a terrain-cache test through
 POST `/terrain-cache/jobs` and poll GET `/terrain-cache/jobs/:id`. Jobs cache
 short-code-indexed meshes at a native minimum resolution of 1000, preserving

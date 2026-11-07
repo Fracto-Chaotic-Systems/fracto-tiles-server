@@ -30,6 +30,8 @@ import {create_mesh_heat_map_handler} from './terrain/HeatMap.js'
 import {create_runtime_terrain_handler} from './terrain/Runtime.js'
 import FractoIndexedTiles from '@fracto/sdk/FractoIndexedTiles.js'
 import {count_indexed_tiles_in_scope} from '../../sdk/terrain/TileCounts.js'
+import {create_mesh_file_sync_router} from './terrain/Sync.js'
+import {require_internal_service} from '../../utils/service_authorization.js'
 
 let latest_level = null
 console.log('Loading compiled tile index cache...')
@@ -69,6 +71,7 @@ for (const {level, ready, total, stale, invalid} of mesh_levels) {
 if (!mesh_levels.length) console.log('Mesh inventory: no meshes')
 const terrain_cache = create_terrain_cache_handlers({source_identity: mesh_source_identity, inventory_store: mesh_inventory})
 const handle_mesh = create_mesh_handler({source_identity: mesh_source_identity, inventory_store: mesh_inventory})
+app.use('/internal/mesh-sync', require_internal_service, create_mesh_file_sync_router({inventory_store: mesh_inventory, has_active_jobs: terrain_cache.has_active_jobs}))
 // Automation jobs may contain thousands of shortcodes. Keep this configurable
 // for installations with larger or stricter request-size requirements.
 const json_body_limit = process.env.FRACTO_JSON_BODY_LIMIT || '25mb'

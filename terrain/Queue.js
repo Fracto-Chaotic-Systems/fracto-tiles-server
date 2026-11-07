@@ -151,7 +151,14 @@ export function create_mesh_job_queue({
     }
   };
   return {
+    busy() {
+      return active || queue.length > 0;
+    },
     enqueue(plan) {
+      if (inventory_store?.sync_owner)
+        throw Object.assign(new Error("Mesh synchronization is in progress"), {
+          status: 409,
+        });
       const identity = createHash("sha256")
         .update(JSON.stringify(plan))
         .digest("hex");
