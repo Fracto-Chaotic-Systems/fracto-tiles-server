@@ -44,12 +44,16 @@ export class MeshFileSync {
   touch(id, session) {
     clearTimeout(session.timer);
     session.timer = setTimeout(() => {
+      if (session.status === "checking") {
+        session.abandoned = true;
+        return;
+      }
       if (session.busy) return this.touch(id, session);
       this.close(id);
     }, this.ttl_ms);
     session.timer.unref?.();
   }
-  async open() {
+  start() {
     if (
       this.store.sync_owner ||
       this.has_active_jobs() ||
@@ -57,22 +61,63 @@ export class MeshFileSync {
     )
       throw fail("mesh_jobs_active");
     const id = randomUUID(),
-      session = { busy: true };
+      session = { busy: true, status: "checking", files_checked: 0 };
     this.store.sync_owner = id;
     this.sessions.set(id, session);
-    try {
-      const catalog = await this.catalog();
-      session.busy = false;
-      this.touch(id, session);
-      return { id, catalog };
-    } catch (error) {
+    this.touch(id, session);
+    session.completion = (async () => {
+      try {
+        session.catalog = await this.catalog({
+          on_progress: ({ files_checked }) => {
+            if (session.abandoned) throw fail("mesh_session_expired", 404);
+            session.files_checked = files_checked;
+          },
+        });
+        session.status = "ready";
+      } catch (error) {
+        session.status = "failed";
+        session.error = error.status ? error.code : "mesh_sync_storage_failed";
+      } finally {
+        session.busy = false;
+        if (session.abandoned) this.close(id);
+        else this.touch(id, session);
+      }
+    })();
+    return { id, status: "checking", files_checked: 0 };
+  }
+  async open() {
+    const { id } = this.start();
+    const session = this.sessions.get(id);
+    // Legacy callers are actively waiting for acquisition; idle expiry begins
+    // once that request can receive its catalog.
+    clearTimeout(session.timer);
+    await session.completion;
+    if (session.error) {
       this.close(id);
-      throw error;
+      throw fail(session.error, 503);
     }
+    if (session.abandoned) throw fail("mesh_session_expired", 404);
+    return { id, catalog: session.catalog };
+  }
+  status(id) {
+    const session = this.sessions.get(id);
+    if (!session || session.abandoned) throw fail("mesh_session_expired", 404);
+    this.touch(id, session);
+    return {
+      id,
+      status: session.status,
+      files_checked: session.files_checked,
+      ...(session.status === "ready" ? { catalog: session.catalog } : {}),
+      ...(session.status === "failed" ? { error: session.error } : {}),
+    };
   }
   close(id) {
     const session = this.sessions.get(id);
     if (!session) return;
+    if (session.busy) {
+      session.abandoned = true;
+      return;
+    }
     clearTimeout(session.timer);
     this.sessions.delete(id);
     if (this.store.sync_owner === id) this.store.sync_owner = null;
@@ -87,11 +132,12 @@ export class MeshFileSync {
       return await operation();
     } finally {
       session.busy = false;
-      if (this.sessions.has(id)) this.touch(id, session);
+      if (session.abandoned) this.close(id);
+      else if (this.sessions.has(id)) this.touch(id, session);
     }
   }
-  async catalog() {
-    await this.store.reconcile();
+  async catalog(options = {}) {
+    await this.store.reconcile(options);
     const records = this.store.inventory
       .snapshot()
       .records.map(({ short_code }) => {
@@ -220,15 +266,38 @@ export function create_mesh_file_sync_router(options) {
     sync = new MeshFileSync(options);
   router.use(express.json({ limit: "24mb" }));
   router.post(
+    "/identity",
+    safe(async (_req, res) =>
+      res.json({
+        version: 1,
+        namespace: sync.store.inventory.namespace,
+        profile: TERRAIN_MESH_PROFILE,
+      }),
+    ),
+  );
+  router.post(
+    "/sessions/start",
+    safe(async (_req, res) => res.json(sync.start())),
+  );
+  router.post(
+    "/sessions/:id/status",
+    safe(async (req, res) => res.json(sync.status(req.params.id))),
+  );
+  router.post(
     "/sessions",
-    safe(async (_req, res) => res.json(await sync.open())),
+    safe(async (_req, res) => {
+      const opened = await sync.open();
+      if (res.destroyed) {
+        sync.close(opened.id);
+        return;
+      }
+      res.json(opened);
+    }),
   );
   router.post(
     "/sessions/:id/close",
     safe(async (req, res) => {
-      await sync.with_session(req.params.id, async () =>
-        sync.close(req.params.id),
-      );
+      sync.close(req.params.id);
       res.json({ closed: true });
     }),
   );

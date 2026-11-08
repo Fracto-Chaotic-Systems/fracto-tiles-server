@@ -1,5 +1,14 @@
 # Terrain cache jobs
 
+Mesh sync inventory acquisition uses internal `/sessions/start` and
+`/sessions/:id/status` POST routes behind the service token. Scans reserve the
+store, report checked-file counts, and return the catalog when ready, so large
+volumes do not need one long HTTP request. Closing an in-flight scan marks it
+abandoned and releases its reservation after outstanding reads finish. The
+legacy `/sessions` route remains available. Numerical tile files are not scanned.
+Internal POST `/identity` exposes only the catalog version, namespace and build
+profile for an inexpensive compatibility check before acquiring the local store.
+
 `Jobs.js` owns queued test jobs launched from the freeform bailiwick panel.
 POST `/terrain-cache/jobs` accepts a bailiwick ID, loads its saved display region
 from the data service and plans a minimum 1000-sample native resolution. GET
