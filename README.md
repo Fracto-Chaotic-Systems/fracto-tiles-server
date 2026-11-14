@@ -19,6 +19,13 @@ Express service for loading Fracto's compiled tile index and serving tile-derive
 
 ## Repository layout requirement
 
+To populate the database `tiles` table from indexed tiles, run
+`npm run tiles:sync-db` from the root repository (`npm run tiles:sync-db:dev`
+for development). The command executes `manifest_to_db.js` inside the running
+Compose container, using its data-service port, internal authentication and
+tile index. It inserts missing rows and skips existing rows. The container and
+data service must already be running; this does not refresh the index itself.
+
 This is an independent Git repository, but it is expected to remain at:
 
 ```text
