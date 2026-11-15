@@ -22,9 +22,120 @@ Express service for loading Fracto's compiled tile index and serving tile-derive
 To populate the database `tiles` table from indexed tiles, run
 `npm run tiles:sync-db` from the root repository (`npm run tiles:sync-db:dev`
 for development). The command executes `manifest_to_db.js` inside the running
-Compose container, using its data-service port, internal authentication and
-tile index. It inserts missing rows and skips existing rows. The container and
-data service must already be running; this does not refresh the index itself.
+Compose container, using one direct MySQL connection and a streaming CSV source.
+It inserts missing rows and skips existing short codes. Only the container and
+MySQL must be running; the data service is not required. It does not refresh the index.
+
+### Bulk database seeding
+
+`manifest_to_db.js` streams the authoritative `manifest/indexed.csv` listing,
+computes metadata without checking or creating tile directories, sorts each
+bounded batch by short code, and sends an in-memory TSV stream through MySQL
+`LOAD DATA LOCAL INFILE` when enabled, or parameterized multi-row `INSERT IGNORE`
+when it is disabled. `--method auto` (the default) selects between them; use
+`--method load-data` or `--method insert` to require a particular method.
+The default batch is 10,000 rows per transaction;
+`--batch-size N` accepts 1–50,000. Memory usage does not grow with the total
+tile count. The source uses the existing local/remote source settings, or
+`--source FILE` selects an explicit local CSV with a `short_code` header.
+The listing may be newer than the running compiled index.
+
+For an initial seed with only `PRIMARY KEY(short_code)`:
+
+```powershell
+npm run tiles:sync-db -- --seed
+# Development container:
+npm run tiles:sync-db:dev -- --seed
+# Or run directly on the host:
+node servers/fracto-tiles-server/manifest_to_db.js --seed --source D:/tiles/manifest/indexed.csv
+```
+
+`--seed` creates and loads `tiles_seed`; it leaves `tiles` untouched. Override
+the target with `--table NAME`. An existing seed target must be InnoDB with
+only the full short-code primary key. No redundant unique index is created.
+Normal sync targets `tiles` and preserves its indexes. Both modes skip duplicate
+short codes without rewriting existing rows. Seed mode enables durable byte-offset
+checkpointing automatically. Rerun the same command to resume at the next
+uncommitted CSV record, without parsing earlier records. The checkpoint and
+tile batch commit in the same InnoDB transaction, including when existing rows
+were skipped. A connection failure during COMMIT is safe to retry.
+
+Checkpoints live in `fracto_tile_seed_checkpoints`, one per target table, with
+the source identity, byte offset and cumulative counts. The importer initializes
+this journal from replay-safe migration `018_tile-seed-checkpoints.sql`; the
+normal database migration runner also installs it. Checkpoint mode requires
+CREATE (for first use) and SELECT/INSERT/UPDATE on the journal. A MySQL advisory
+lock rejects a second checkpointed importer for the same target. Do not run an
+uncheckpointed writer simultaneously, or drop, truncate, rename, or modify the
+target while its checkpoint is in use. If the target is replaced, use `--restart`.
+
+Local CSVs are read directly with byte seeking; file identity, size, timestamps
+and a header-prefix fingerprint must match the checkpoint. They must remain
+unchanged. Remote CSVs are downloaded once to an immutable local snapshot before
+loading begins. Subsequent runs seek that snapshot without another HTTP request;
+they do not depend on HTTP range support or a stable remote listing. The initial
+download itself restarts if interrupted. Preserve the snapshot across restarts.
+Its default directory is `${FRACTO_TILE_DATA_DIR}/db-seed` (root `tiles/db-seed`
+on the host); Docker's existing tile-data volume persists it. Override with
+`--cache-dir DIR` or `FRACTO_TILE_DB_CACHE_DIR`. Allow enough disk space for the
+entire CSV. Old snapshots are retained for recovery and can be removed manually
+after their checkpoints have been restarted or retired.
+
+`--restart` resets only the checkpoint, retains existing tile rows, and rescans
+the requested source (taking a new snapshot for remote CSVs). Use it to import
+a newer dataset, recover after replacing a source/target, or refresh an already
+completed seed. Missing or changed checkpoint sources fail instead of silently
+applying an old offset to different data. Completed checkpoints perform no loading
+on a repeat invocation. A seed begun before checkpoint support must rescan once
+to establish its first checkpoint, while skipping existing records.
+
+Normal sync retains its streaming behavior; add `--checkpoint` for resumable
+sync or `--no-checkpoint` to disable checkpoints in seed mode. Without checkpoints,
+a retry reads the listing from the beginning and skips existing records. The
+default seed table and checkpoint journal are excluded from peer database sync.
+
+The importer checks `local_infile` before creating the seed table and selects
+the loading method; it does not change global settings. For the fastest text-file
+loading path, enable `local_infile` on MySQL and select `--method load-data`.
+The batched-insert path works without that server setting. Both paths use one
+connection and one transaction per batch, with no per-tile lookups. If a large
+insert batch exceeds `max_allowed_packet`, lower `--batch-size`.
+It reads root
+`config/mysql.json` with `FRACTO_MYSQL_HOST`, `FRACTO_MYSQL_PORT`, and
+`FRACTO_MYSQL_DATABASE` overrides. The database user needs metadata visibility,
+SELECT/INSERT on the target, and CREATE for seed mode (plus the journal privileges
+above when checkpointing). The driver exposes only
+the current in-memory batch to LOCAL INFILE, never arbitrary local files.
+
+Each batch commits independently. Duplicate-key warnings are accepted; other
+load warnings or errors roll back the current batch and cause a nonzero exit.
+Previously committed batches remain. Invalid CSV or a failed download also
+stops the import. Do not modify a source listing during import.
+
+Benchmark a separate table first:
+
+```powershell
+npm run tiles:sync-db -- --seed --table tiles_seed_benchmark --limit 1000000
+```
+
+Progress reports processed, inserted, existing, elapsed seconds, and throughput,
+plus cumulative committed rows and checkpoint byte position when enabled.
+`--limit` counts source rows, including duplicates, and is only a partial seed.
+With checkpointing it is a cumulative ceiling: a run limited to one million rows
+will not load more on retry unless the limit is raised or removed. Batch size and
+loading method may change when resuming.
+Before using a full seed, compare its row count and per-level counts with the
+source's unique codes and inspect representative bounds/folders. Decide which
+secondary indexes the application needs and build those after loading, then
+perform a separately planned cutover with writers stopped and any foreign keys
+or triggers accounted for. The script never swaps tables, drops indexes, or
+disables uniqueness, foreign-key checks, or redo logging. Allow disk space for
+both the live and seed tables, plus later index building.
+
+Run `npm run test:tiles-db` from the root for importer regression checks. An
+additional disposable-schema MySQL integration test is available by setting
+`FRACTO_TEST_MYSQL_TILE_SEED=1`; it tests the automatically selected method,
+requires schema create/drop privileges, and removes only the schema it created.
 
 This is an independent Git repository, but it is expected to remain at:
 
@@ -397,7 +508,11 @@ Other maintenance scripts include:
 
 - `tile_inventory.js`: tile inventory operations.
 - `tile_manifest.js`: manifest-related generation.
-- `manifest_to_db.js`: sends manifest-derived coverage to the data service.
+- `manifest_to_db.js`: imports the indexed CSV directly into MySQL in transactional batches; `--seed` creates a separate primary-key-only table.
+- `tile_seed_source.js`: streams local or remote CSV listings into bounded, validated short-code batches.
+- `tile_seed_database.js`: builds metadata and loads batches with LOCAL INFILE or multi-row inserts, preserving existing short codes and rolling back data warnings.
+- `tile_seed_checkpoint.js`: owns the transactional byte-position journal and target advisory lock.
+- `tile_seed_snapshot.js`: pins a remote CSV or validates a local CSV for fast seeking on resume.
 - `backup.js`: host-side tile backup operation. It imports shared SDK modules
   by repository-relative path so it can run outside Docker and access the host
   tile files directly; run it from the root repository with `npm run
