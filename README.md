@@ -17,6 +17,30 @@ mesh asset; its path mirrors the numerical tile's directory structure.
 
 Express service for loading Fracto's compiled tile index and serving tile-derived coverage, raster buffers, heat maps, and manifests. It listens on port 3004 and depends on shared SDK and configuration files from the parent Fracto repository.
 
+## Numerical tiles for flight
+
+`GET /tile?short_code=CODE` returns schema version 1 with `source_id`,
+`short_code`, `bounds`, and the native column-major 256×256 `tile_data` of
+`[pattern, iteration]` pairs (or null samples). It reuses `FractoTileCache` and
+the active source configuration. Canonical upper-plane codes at levels 3–34
+are accepted. The browser mirrors southern coordinates before requesting codes.
+Only tiles in the loaded compiled index may be read. Invalid codes return 400;
+index misses return 404 `TILE_NOT_INDEXED`; indexed read/decode/shape failures
+return retryable 503 `TILE_UNAVAILABLE` without exposing filesystem details.
+
+`GET /tile_availability?short_codes=CODE,CODE` accepts at most 256 codes and
+returns `{schema_version: 1, source_id, availability: {CODE: boolean}}` without
+loading tiles or remote coverage classifications. Repeated codes are deduplicated.
+Unsupported/malformed codes or oversized requests return 400; index lookup
+failures return 503. Both routes retain the service's normal authorization and
+CORS behavior and send `Cache-Control: no-store`. Source identity binds the
+index fingerprint, source mode, and source generation used by the running service.
+These endpoints do not promise complete deeper coverage or calculate new samples.
+
+Run `node --test test/flight_tile_access.test.js` from the repository root for
+geometry, handler, and real local HTTP integration checks. The root
+`npm run test:flight-tiles` also runs browser-cache and production-adapter checks.
+
 ## Repository layout requirement
 
 To populate the database `tiles` table from indexed tiles, run

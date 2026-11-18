@@ -3,7 +3,7 @@ import chalk from 'chalk'
 const FRACTO_TILES_PORT = Number(process.env.FRACTO_TILES_PORT || 3004)
 
 import {handle_main_status} from './handlers/status.js'
-import {handle_tile} from './handlers/tile.js'
+import {create_tile_handlers} from './handlers/tile.js'
 import {
    initialize_coverage,
 } from '@fracto/sdk/FractoCoverageUtils.js'
@@ -107,7 +107,13 @@ app.listen(FRACTO_TILES_PORT, () => {
 
 app.get('/', handle_main_status)
 app.use((req, res, next) => req.path === '/' ? next() : require_enabled_user_if_configured(req, res, next))
-app.get('/tile', handle_tile)
+const numerical_tiles = create_tile_handlers({
+   get_level: level => FractoIndexedTiles.get_set_level('indexed', level),
+   get_tile: code => FractoTileCache.get_tile(code),
+   source_id: JSON.stringify(mesh_source_identity),
+})
+app.get('/tile', numerical_tiles.tile)
+app.get('/tile_availability', numerical_tiles.availability)
 app.get('/meshes/:short_code', handle_mesh)
 app.get('/mesh_inventory', (_req, res) => res.json(mesh_inventory.inventory.summary()))
 app.get('/mesh_terrain', create_runtime_terrain_handler(mesh_inventory.inventory, (level, focal_point, scope, aspect_ratio) =>
