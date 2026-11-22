@@ -1,4 +1,4 @@
-import { read_mesh_file } from "../../../sdk/terrain/Storage.js";
+import { read_mesh_file } from "@fracto/sdk/terrain/Storage.js";
 
 /** Meshes are prebuilt; reads never trigger generation or numerical downloads. */
 export function create_mesh_handler(options = {}) {

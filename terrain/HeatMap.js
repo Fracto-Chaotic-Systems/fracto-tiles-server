@@ -1,4 +1,4 @@
-import { mesh_heat_map } from "../../../sdk/terrain/HeatMap.js";
+import { mesh_heat_map } from "@fracto/sdk/terrain/HeatMap.js";
 
 export function create_mesh_heat_map_handler(inventory, options = {}) {
   return (req, res) => {

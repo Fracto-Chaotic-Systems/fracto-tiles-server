@@ -15,7 +15,7 @@ Mesh files persist beneath `meshes/` on the active tile volume, initialized
 before the service listens. GET `/meshes/:short_code` retrieves a prebuilt gzip
 mesh asset; its path mirrors the numerical tile's directory structure.
 
-Express service for loading Fracto's compiled tile index and serving tile-derived coverage, raster buffers, heat maps, and manifests. It listens on port 3004 and depends on shared SDK and configuration files from the parent Fracto repository.
+Express service for loading Fracto's compiled tile index and serving tile-derived coverage, raster buffers, heat maps, and manifests. It listens on port 3004 and depends on `@fracto/sdk` and explicit environment configuration.
 
 ## Numerical tiles for flight
 
@@ -45,14 +45,14 @@ geometry, handler, and real local HTTP integration checks. The root
 
 To populate the database `tiles` table from indexed tiles, run
 `npm run tiles:sync-db` from the root repository (`npm run tiles:sync-db:dev`
-for development). The command executes `manifest_to_db.js` inside the running
+for development). The command executes the data service's `scripts/manifest_to_db.js` inside the running
 Compose container, using one direct MySQL connection and a streaming CSV source.
 It inserts missing rows and skips existing short codes. Only the container and
 MySQL must be running; the data service is not required. It does not refresh the index.
 
 ### Bulk database seeding
 
-`manifest_to_db.js` streams the authoritative `manifest/indexed.csv` listing,
+the data service's `scripts/manifest_to_db.js` streams the authoritative `manifest/indexed.csv` listing,
 computes metadata without checking or creating tile directories, sorts each
 bounded batch by short code, and sends an in-memory TSV stream through MySQL
 `LOAD DATA LOCAL INFILE` when enabled, or parameterized multi-row `INSERT IGNORE`
@@ -167,7 +167,10 @@ This is an independent Git repository, but it is expected to remain at:
 fracto/servers/fracto-tiles-server/
 ```
 
-The service imports modules such as `../../constants.js` and `../../sdk/FractoTileIndexCache.js`. Moving or cloning it outside that layout breaks those shared imports.
+The service consumes shared modules through `@fracto/sdk` npm exports. Its
+manifest and lockfile declare the local SDK dependency; it imports no root or
+other-service implementation files. Tile database loading belongs to the data
+service and accesses only its owned configuration.
 
 Run Git operations for this service from this directory. Run compiled-cache and full-system commands from the root `fracto/` directory.
 
@@ -532,7 +535,7 @@ Other maintenance scripts include:
 
 - `tile_inventory.js`: tile inventory operations.
 - `tile_manifest.js`: manifest-related generation.
-- `manifest_to_db.js`: imports the indexed CSV directly into MySQL in transactional batches; `--seed` creates a separate primary-key-only table.
+- the data service's `scripts/manifest_to_db.js`: imports the indexed CSV directly into MySQL in transactional batches; `--seed` creates a separate primary-key-only table.
 - `tile_seed_source.js`: streams local or remote CSV listings into bounded, validated short-code batches.
 - `tile_seed_database.js`: builds metadata and loads batches with LOCAL INFILE or multi-row inserts, preserving existing short codes and rolling back data warnings.
 - `tile_seed_checkpoint.js`: owns the transactional byte-position journal and target advisory lock.
@@ -546,17 +549,17 @@ Review a maintenance script's paths and side effects before running it. These sc
 
 ## Shared dependencies
 
-Important root modules used by this service include:
+Shared npm SDK modules used by this service include:
 
-- `constants.js`: port and root directory definitions.
-- `sdk/FractoTileIndexCache.js`: compiled-cache build/load contract.
-- `sdk/FractoIndexedTiles.js`: in-memory tile index.
-- `sdk/FractoTileData.js`: tile selection and raster filling.
-- `sdk/FractoCoverageUtils.js`: remote category coverage.
-- `sdk/FractoTileCache.js`: loaded tile payload cache.
+- `@fracto/sdk/utils/PlatformConstants.js`: platform ports and defaults.
+- `@fracto/sdk/FractoTileIndexCache.js`: compiled-cache build/load contract.
+- `@fracto/sdk/FractoIndexedTiles.js`: in-memory tile index.
+- `@fracto/sdk/FractoTileData.js`: tile selection and raster filling.
+- `@fracto/sdk/FractoCoverageUtils.js`: remote category coverage.
+- `@fracto/sdk/FractoTileCache.js`: loaded tile payload cache.
 - `config/network.json`: remote coverage source.
 
-Changes to these shared files belong to the root repository, not this repository.
+SDK changes belong in the root SDK package; service code consumes only its npm exports.
 
 ## Validation
 

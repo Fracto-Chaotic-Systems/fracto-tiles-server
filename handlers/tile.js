@@ -2,7 +2,7 @@ import {
   tile_bounds,
   validate_tile_code,
   validate_tile_data,
-} from "../../../sdk/FractoTileGeometry.js";
+} from "@fracto/sdk/FractoTileGeometry.js";
 
 export const MAX_TILE_AVAILABILITY_CODES = 256;
 

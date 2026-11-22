@@ -6,10 +6,10 @@ import { randomUUID, createHash } from "node:crypto";
 import {
   mesh_relative_path,
   assert_mesh_capacity,
-} from "../../../sdk/terrain/Paths.js";
-import { decode_terrain_mesh } from "../../../sdk/terrain/Cache.js";
-import { durable_replace } from "../../../sdk/terrain/DurableFile.js";
-import { TERRAIN_MESH_PROFILE } from "../../../sdk/terrain/Profile.js";
+} from "@fracto/sdk/terrain/Paths.js";
+import { decode_terrain_mesh } from "@fracto/sdk/terrain/Cache.js";
+import { durable_replace } from "@fracto/sdk/terrain/DurableFile.js";
+import { TERRAIN_MESH_PROFILE } from "@fracto/sdk/terrain/Profile.js";
 
 export const MAX_MESH_BYTES = 16 * 1024 * 1024;
 const sha = (bytes) => createHash("sha256").update(bytes).digest("hex");

@@ -20,18 +20,18 @@ import {handle_metrics, record_request} from './handlers/metrics.js'
 import {handle_benchmark_results} from './handlers/benchmark_results.js'
 import {handle_preload_coverage} from './handlers/preload_coverage.js'
 import { handle_automation, handle_automation_create, handle_automation_claim, handle_automation_update } from './handlers/handle_automation.js'
-import { require_enabled_user_if_configured } from '../../utils/service_authorization.js'
-import { record_runtime_metric } from '../../utils/windowed_metrics.js'
+import { require_enabled_user_if_configured } from "@fracto/sdk/utils/ServiceAuthorization.js"
+import { record_runtime_metric } from "@fracto/sdk/utils/WindowedMetrics.js"
 import {create_terrain_cache_handlers} from './terrain/Jobs.js'
-import {initialize_mesh_storage} from '../../sdk/terrain/Paths.js'
+import {initialize_mesh_storage} from "@fracto/sdk/terrain/Paths.js"
 import {create_mesh_handler} from './terrain/Access.js'
-import {MeshInventoryStore} from '../../sdk/terrain/InventoryStore.js'
+import {MeshInventoryStore} from "@fracto/sdk/terrain/InventoryStore.js"
 import {create_mesh_heat_map_handler} from './terrain/HeatMap.js'
 import {create_runtime_terrain_handler} from './terrain/Runtime.js'
 import FractoIndexedTiles from '@fracto/sdk/FractoIndexedTiles.js'
-import {count_indexed_tiles_in_scope} from '../../sdk/terrain/TileCounts.js'
+import {count_indexed_tiles_in_scope} from "@fracto/sdk/terrain/TileCounts.js"
 import {create_mesh_file_sync_router} from './terrain/Sync.js'
-import {require_internal_service} from '../../utils/service_authorization.js'
+import {require_internal_service} from "@fracto/sdk/utils/ServiceAuthorization.js"
 
 let latest_level = null
 console.log('Loading compiled tile index cache...')

@@ -1,11 +1,11 @@
-import FractoIndexedTiles from "../../../sdk/FractoIndexedTiles.js";
+import FractoIndexedTiles from "@fracto/sdk/FractoIndexedTiles.js";
 import {
   terrain_region,
   terrain_level,
   plan_terrain_tiles,
-} from "../../../sdk/terrain/Plan.js";
-import { plan_mesh_transform } from "../../../sdk/terrain/TransformPlan.js";
-import { internal_service_headers } from "../../../utils/service_authorization.js";
+} from "@fracto/sdk/terrain/Plan.js";
+import { plan_mesh_transform } from "@fracto/sdk/terrain/TransformPlan.js";
+import { internal_service_headers } from "@fracto/sdk/utils/ServiceAuthorization.js";
 import { create_mesh_job_queue } from "./Queue.js";
 
 const read_record = async (id, req) => {

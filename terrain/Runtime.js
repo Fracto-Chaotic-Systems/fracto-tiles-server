@@ -1,4 +1,4 @@
-import { plan_runtime_terrain } from "../../../sdk/terrain/RuntimePlan.js";
+import { plan_runtime_terrain } from "@fracto/sdk/terrain/RuntimePlan.js";
 
 export function create_runtime_terrain_handler(inventory, count_tiles) {
   return (req, res) => {

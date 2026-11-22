@@ -1,7 +1,7 @@
 import path from "node:path";
 import { Worker } from "node:worker_threads";
 import { randomUUID, createHash } from "node:crypto";
-import { MESH_DIRECTORY } from "../../../sdk/terrain/Paths.js";
+import { MESH_DIRECTORY } from "@fracto/sdk/terrain/Paths.js";
 
 const ACTIVE = ["queued", "running", "stopping"];
 const snapshot = (job) => ({
@@ -28,7 +28,7 @@ export function create_mesh_job_queue({
   cache_root = MESH_DIRECTORY,
   inventory_store = null,
   create_worker = (workerData) =>
-    new Worker(new URL("../../../sdk/terrain/Worker.js", import.meta.url), {
+    new Worker(new URL(import.meta.resolve("@fracto/sdk/terrain/Worker.js")), {
       workerData,
     }),
   timeout_ms = 10 * 60 * 1000,
