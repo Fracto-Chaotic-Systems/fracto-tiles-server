@@ -1,5 +1,11 @@
 # fracto-tiles-server
 
+Startup coverage initialization counts the already-loaded spatial index without
+constructing a second Set entry for every shortcode. Membership Sets are built
+only on first coverage use; ordinary tile access retains the complete compiled
+index. This reduces idle memory competing with the host AI engine. First coverage
+use still pays the existing membership/classification cost.
+
 Mesh file synchronization uses private `/internal/mesh-sync` endpoints through
 the admin service. Its sessions reserve the live mesh store against generation,
 validate and atomically publish received mesh assets, and register them in the
